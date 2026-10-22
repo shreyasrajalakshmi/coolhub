@@ -1,12 +1,12 @@
-import type { Bill, Contact, Job, Settings } from "./types";
+import type { AuditEntry, Bill, Contact, Job, Settings } from "./types";
 import { DEFAULT_SETTINGS, OFFICIAL_PROFILE, PROFILE_VERSION } from "./types";
 
 const DB_NAME = "coolhub-billbook";
-const DB_VERSION = 3;
+const DB_VERSION = 4; // v4 adds the audit store
 const SETTINGS_KEY = "coolhub-settings";
 
-type StoreName = "bills" | "jobs" | "contacts";
-const STORES: StoreName[] = ["bills", "jobs", "contacts"];
+type StoreName = "bills" | "jobs" | "contacts" | "audit";
+const STORES: StoreName[] = ["bills", "jobs", "contacts", "audit"];
 
 function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -68,6 +68,16 @@ export const getAllContacts = async () => (await getAll<Contact>("contacts")).so
 export const putContact = (c: Contact) => put("contacts", c);
 export const putContacts = (c: Contact[]) => putMany("contacts", c);
 export const deleteContact = (id: string) => remove("contacts", id);
+
+const AUDIT_LIMIT = 5000;
+export const getAllAudit = async () => (await getAll<AuditEntry>("audit")).sort((a, b) => b.at.localeCompare(a.at));
+export const putAudit = (e: AuditEntry) => put("audit", e);
+export const putAudits = (e: AuditEntry[]) => putMany("audit", e);
+/** Keeps the log bounded by dropping the oldest entries (input must be newest-first). */
+export async function trimAudit(newestFirst: AuditEntry[]): Promise<void> {
+  const extra = newestFirst.slice(AUDIT_LIMIT);
+  if (extra.length) await withStore("audit", "readwrite", (s) => void extra.forEach((e) => s.delete(e.id)));
+}
 
 const OLD_DEFAULT_TERMS =
   "1. 30-day service warranty on repair work; parts carry the manufacturer's warranty.\n2. Warranty is void on physical damage, water damage or tampering.\n3. Payment is due on completion of service.";

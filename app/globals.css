@@ -22,6 +22,7 @@
   --color-accent-fg: #f87171;
   --color-ok-fg: #34d399;
   --color-warn-fg: #fbbf24;
+  --color-info-fg: #38bdf8;
   --color-overlay: rgb(0 0 0 / 0.72);
   --color-fill: rgb(255 255 255 / 0.055);
   --color-fill-faint: rgb(255 255 255 / 0.03);
@@ -60,6 +61,7 @@
   --color-accent-fg: #b91c1c;
   --color-ok-fg: #047857;
   --color-warn-fg: #b45309;
+  --color-info-fg: #0369a1;
   --color-overlay: rgb(15 23 42 / 0.5);
   --grid: rgb(15 23 42 / 0.05);
   --wm: rgb(15 23 42 / 0.035);

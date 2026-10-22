@@ -4,19 +4,20 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { BarChart3, LayoutDashboard, Receipt, Settings as SettingsIcon, Users, WifiOff, Wrench } from "lucide-react";
+import { BarChart3, History, LayoutDashboard, Receipt, Settings as SettingsIcon, Users, WifiOff, Wrench } from "lucide-react";
 import { spring } from "@/lib/motion";
 import { useData } from "./DataProvider";
 import Footer from "./Footer";
 import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
 
-const NAV = [
+const NAV: { href: string; label: string; icon: typeof History; desktopOnly?: boolean }[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/billing", label: "Billing", icon: Receipt },
   { href: "/jobs", label: "Jobs", icon: Wrench },
   { href: "/customers", label: "Customers", icon: Users },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
+  { href: "/activity", label: "Activity", icon: History, desktopOnly: true },
   { href: "/settings", label: "Settings", icon: SettingsIcon },
 ];
 
@@ -130,7 +131,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           aria-label="Main"
         >
           <div className="grid grid-cols-6">
-            {NAV.map(({ href, label, icon: Icon }) => {
+            {NAV.filter((n) => !n.desktopOnly).map(({ href, label, icon: Icon }) => {
               const active = isActive(pathname, href);
               return (
                 <Link

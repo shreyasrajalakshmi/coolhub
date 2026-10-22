@@ -304,7 +304,7 @@ export default function BillForm({ editing = null, job = null, contact = null, o
         )}
       </AnimatePresence>
 
-      <div className="sticky bottom-0 -mx-5 -mb-5 flex gap-2 border-t border-line bg-surface/95 px-5 py-4 backdrop-blur">
+      <div className="sticky bottom-0 -mx-5 -mb-5 flex gap-2 border-t border-line bg-panel/95 px-5 py-4 backdrop-blur">
         <Button type="button" onClick={onCancel}>Cancel</Button>
         <Button type="submit" variant="primary" disabled={saving} className="flex-1 !py-3.5 text-base">
           <Save size={18} /> {editing ? "Update Bill" : "Save & Generate Invoice"}

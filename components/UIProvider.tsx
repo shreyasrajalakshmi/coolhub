@@ -3,7 +3,7 @@
 import { AnimatePresence } from "framer-motion";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { createContext, Suspense, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { Banknote, Smartphone } from "lucide-react";
+import { AlertTriangle, Banknote, Smartphone, Trash2 } from "lucide-react";
 import { formatMoney } from "@/lib/format";
 import type { Bill, Contact, Job, PaymentMethod } from "@/lib/types";
 import BillForm from "./BillForm";
@@ -31,6 +31,14 @@ interface UIContextValue {
   openWhatsApp: (contact?: Contact | null) => void;
   /** Asks how a pending bill was paid (Cash / UPI), then marks it paid. */
   markPaid: (bill: Bill) => void;
+  /** Styled yes/no prompt; resolves true only if the user confirms. */
+  confirm: (opts: ConfirmOptions) => Promise<boolean>;
+}
+
+interface ConfirmOptions {
+  title: string;
+  message: React.ReactNode;
+  confirmLabel?: string;
 }
 
 const UIContext = createContext<UIContextValue | null>(null);
@@ -69,6 +77,7 @@ export default function UIProvider({ children }: { children: React.ReactNode }) 
   const [invoice, setInvoice] = useState<Bill | null>(null);
   const [whatsapp, setWhatsapp] = useState<{ contact: Contact | null } | null>(null);
   const [paying, setPaying] = useState<Bill | null>(null);
+  const [asking, setAsking] = useState<{ opts: ConfirmOptions; resolve: (ok: boolean) => void } | null>(null);
 
   const openBill = useCallback((d: BillDraft = {}) => setBillDraft(d), []);
   const openJob = useCallback((d: JobDraft = {}) => setJobDraft(d), []);
@@ -76,7 +85,15 @@ export default function UIProvider({ children }: { children: React.ReactNode }) 
   const openWhatsApp = useCallback((c: Contact | null = null) => setWhatsapp({ contact: c }), []);
 
   const markPaid = useCallback((b: Bill) => setPaying(b), []);
-  const value = useMemo(() => ({ openBill, openJob, viewInvoice, openWhatsApp, markPaid }), [openBill, openJob, viewInvoice, openWhatsApp, markPaid]);
+  const confirm = useCallback((opts: ConfirmOptions) => new Promise<boolean>((resolve) => setAsking({ opts, resolve })), []);
+  const answer = (ok: boolean) => {
+    asking?.resolve(ok);
+    setAsking(null);
+  };
+  const value = useMemo(
+    () => ({ openBill, openJob, viewInvoice, openWhatsApp, markPaid, confirm }),
+    [openBill, openJob, viewInvoice, openWhatsApp, markPaid, confirm],
+  );
 
   const pay = async (method: PaymentMethod) => {
     if (!paying) return;
@@ -119,6 +136,24 @@ export default function UIProvider({ children }: { children: React.ReactNode }) 
           </Drawer>
         )}
         {whatsapp && <QuickWhatsApp key="wa" initialContact={whatsapp.contact} onClose={() => setWhatsapp(null)} />}
+        {asking && (
+          <Drawer key="confirm" title={asking.opts.title} onClose={() => answer(false)} variant="dialog">
+            <div className="flex gap-3">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-red-500/40 bg-red-500/10 text-accent-fg">
+                <AlertTriangle size={20} />
+              </span>
+              <div className="min-w-0 text-sm leading-6 text-muted">{asking.opts.message}</div>
+            </div>
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <Button onClick={() => answer(false)} autoFocus>
+                Cancel
+              </Button>
+              <Button variant="primary" onClick={() => answer(true)}>
+                <Trash2 size={16} /> {asking.opts.confirmLabel ?? "Delete"}
+              </Button>
+            </div>
+          </Drawer>
+        )}
         {paying && (
           <Drawer key="pay" title="Mark as paid" subtitle={`${paying.number} · ${paying.customer.name} · ${formatMoney(paying.total)}`} onClose={() => setPaying(null)} variant="dialog">
             <p className="mb-3 text-sm text-muted">How did the customer pay?</p>

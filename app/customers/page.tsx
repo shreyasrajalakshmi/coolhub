@@ -16,7 +16,7 @@ const empty = { billed: 0, paid: 0, bills: 0, jobs: 0 };
 
 export default function CustomersPage() {
   const { contacts, bills, jobs, saveContact, removeContact } = useData();
-  const { openBill, openJob, openWhatsApp, viewInvoice } = useUI();
+  const { openBill, openJob, openWhatsApp, viewInvoice, confirm } = useUI();
   const [query, setQuery] = useState("");
   const [detailId, setDetailId] = useState<string | null>(null);
   const [form, setForm] = useState<{ id?: string; createdAt?: string; data: typeof blank } | null>(null);
@@ -203,7 +203,12 @@ export default function CustomersPage() {
                   variant="danger"
                   aria-label="Delete customer"
                   onClick={async () => {
-                    if (!window.confirm(`Delete ${detail.name} from the directory? Their bills and jobs are kept.`)) return;
+                    const ok = await confirm({
+                      title: `Delete ${detail.name}?`,
+                      message: "They are removed from the customer directory. Their bills and jobs are kept.",
+                      confirmLabel: "Delete customer",
+                    });
+                    if (!ok) return;
                     await removeContact(detail.id);
                     setDetailId(null);
                   }}

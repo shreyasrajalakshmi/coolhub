@@ -67,6 +67,19 @@ export interface Contact extends Customer {
   createdAt: string;
 }
 
+export type AuditKind = "created" | "generated" | "updated" | "deleted";
+export type AuditCategory = "bill" | "job" | "customer" | "settings" | "system";
+
+export interface AuditEntry {
+  id: string;
+  at: string; // ISO timestamp
+  kind: AuditKind;
+  category: AuditCategory;
+  summary: string;
+  /** e.g. "Android Mobile · Chrome", taken from the browser's user agent. */
+  device: string;
+}
+
 export interface ServicePreset {
   name: string;
   /** Optional default unit price – left blank unless the shop sets one. */

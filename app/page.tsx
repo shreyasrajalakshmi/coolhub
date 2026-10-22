@@ -3,12 +3,12 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useMemo } from "react";
-import { Activity, CheckCircle2, ClipboardList, FilePlus2, FileWarning, IndianRupee, MessageCircle, Receipt, Wrench } from "lucide-react";
+import { Activity, History, CheckCircle2, ClipboardList, FilePlus2, FileWarning, IndianRupee, MessageCircle, Receipt, Wrench } from "lucide-react";
 import AnimatedNumber from "@/components/AnimatedNumber";
 import InstallButton from "@/components/InstallButton";
 import { useData } from "@/components/DataProvider";
 import Ticker from "@/components/Ticker";
-import { BillStatusBadge, JobStatusBadge, PageHeader, VARIANT_CLASS } from "@/components/ui";
+import { BillStatusBadge, JobStatusBadge, LinkButton, PageHeader, VARIANT_CLASS } from "@/components/ui";
 import { useUI } from "@/components/UIProvider";
 import { formatDate, formatMoney } from "@/lib/format";
 import { rise, spring, stagger } from "@/lib/motion";
@@ -84,7 +84,14 @@ export default function Dashboard() {
       <PageHeader
         title="Overview"
         subtitle={new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
-        action={<InstallButton />}
+        action={
+          <div className="flex flex-wrap gap-2">
+            <LinkButton href="/activity">
+              <History size={16} /> Activity log
+            </LinkButton>
+            <InstallButton />
+          </div>
+        }
       />
 
       <Ticker items={ticker} />

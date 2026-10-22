@@ -2,22 +2,22 @@
 
 import { motion } from "framer-motion";
 import { useRef, useState } from "react";
-import { Download, Plus, RotateCcw, Trash2, Upload } from "lucide-react";
+import { Download, History, Plus, RotateCcw, Trash2, Upload } from "lucide-react";
 import { DEFAULT_PRESETS, type Bill, type Contact, type Job, type PaperSize, type Settings } from "@/lib/types";
 import { useData } from "./DataProvider";
 import InstallButton from "./InstallButton";
 import { useInstall } from "./InstallProvider";
-import { Button, PageHeader } from "./ui";
+import { Button, LinkButton, PageHeader } from "./ui";
 import { rise, stagger } from "@/lib/motion";
 
 export default function SettingsPanel() {
-  const { settings, updateSettings: onChange, bills, jobs, contacts, importAll } = useData();
+  const { settings, updateSettings: onChange, bills, jobs, contacts, audit, importAll, logAction } = useData();
   const fileRef = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState("");
   const { available: canInstall } = useInstall();
 
   const exportBackup = () => {
-    const blob = new Blob([JSON.stringify({ app: "coolhub", version: 3, settings, bills, jobs, contacts }, null, 2)], {
+    const blob = new Blob([JSON.stringify({ app: "coolhub", version: 4, settings, bills, jobs, contacts, audit }, null, 2)], {
       type: "application/json",
     });
     const a = document.createElement("a");
@@ -25,6 +25,7 @@ export default function SettingsPanel() {
     a.download = `coolhub-backup-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(a.href);
+    logAction("generated", "system", `Backup downloaded: ${bills.length} bills, ${jobs.length} jobs, ${contacts.length} customers`);
   };
 
   const importBackup = async (file: File) => {
@@ -34,7 +35,7 @@ export default function SettingsPanel() {
       const valid = (data.bills as Bill[]).filter((b) => b && b.id && b.number && Array.isArray(b.items));
       const validJobs = ((data.jobs ?? []) as Job[]).filter((j) => j && j.id && j.number && j.customer);
       const validContacts = ((data.contacts ?? []) as Contact[]).filter((c) => c && c.id && c.name);
-      await importAll({ bills: valid, jobs: validJobs, contacts: validContacts, settings: data.settings });
+      await importAll({ bills: valid, jobs: validJobs, contacts: validContacts, audit: Array.isArray(data.audit) ? data.audit : [], settings: data.settings });
       setMessage(`Restored ${valid.length} bills, ${validJobs.length} jobs and ${validContacts.length} customers.`);
     } catch {
       setMessage("That file isn't a valid Cool Hub backup.");
@@ -150,6 +151,16 @@ export default function SettingsPanel() {
         <Button onClick={() => onChange({ servicePresets: [...settings.servicePresets, { name: "" }] })} className="w-full border-dashed">
           <Plus size={16} /> Add preset
         </Button>
+      </motion.section>
+
+      <motion.section variants={rise} className="card flex items-center justify-between gap-3">
+        <div>
+          <h3 className="text-xs font-bold uppercase tracking-[0.18em] text-accent-fg">Activity Log</h3>
+          <p className="mt-1 text-xs text-subtle">{audit.length} recorded action{audit.length === 1 ? "" : "s"}: bills, jobs, customers and settings, with time and device.</p>
+        </div>
+        <LinkButton href="/activity" className="shrink-0">
+          <History size={16} /> Open
+        </LinkButton>
       </motion.section>
 
       <motion.section variants={rise} className="card space-y-3">

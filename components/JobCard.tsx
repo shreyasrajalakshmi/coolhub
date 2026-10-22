@@ -35,7 +35,7 @@ const APPLIANCE_ICON: Record<Appliance, typeof Wrench> = {
 
 export default function JobCard({ job, bill, draggable = false, onDrag, onDragEnd }: Props) {
   const { settings, setJobStatus, removeJob } = useData();
-  const { openBill, openJob, viewInvoice } = useUI();
+  const { openBill, openJob, viewInvoice, confirm } = useUI();
   const [open, setOpen] = useState(false);
   const dragged = useRef(false);
   const meta = JOB_STATUS[job.status];
@@ -188,7 +188,21 @@ export default function JobCard({ job, bill, draggable = false, onDrag, onDragEn
                 </Button>
                 <Button
                   variant="danger"
-                  onClick={() => window.confirm(`Delete job ${job.number} for ${job.customer.name}?`) && removeJob(job.id)}
+                  onClick={async () => {
+                    const ok = await confirm({
+                      title: `Delete job ${job.number}?`,
+                      message: (
+                        <>
+                          <p>
+                            <span className="font-semibold text-fg">{job.customer.name}</span> · {job.appliance} · {job.issue}
+                          </p>
+                          <p className="mt-1">{job.billId ? "Its invoice is kept, but the link to this job is removed. " : ""}This can&apos;t be undone.</p>
+                        </>
+                      ),
+                      confirmLabel: "Delete job",
+                    });
+                    if (ok) await removeJob(job.id);
+                  }}
                   className="!px-3 !py-2"
                   aria-label="Delete job"
                 >

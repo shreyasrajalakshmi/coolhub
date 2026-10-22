@@ -1,14 +1,17 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useData } from "./DataProvider";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Printer, Share2, X } from "lucide-react";
+import { Download, Loader2, Printer, Share2, X } from "lucide-react";
+import { buildInvoicePdf } from "@/lib/invoicePdf";
+import { canShareFile, downloadFile, shareInvoicePdf } from "@/lib/shareInvoice";
 import { whatsappUrl } from "@/lib/format";
 import { softSpring } from "@/lib/motion";
 import type { Bill, PaperSize, Settings } from "@/lib/types";
 import InvoiceView from "./InvoiceView";
-import { AnchorButton, Button, Segmented } from "./ui";
+import { Button, Segmented } from "./ui";
 
 const PAPERS: { value: PaperSize; label: string }[] = [
   { value: "a4", label: "A4 / PDF" },
@@ -31,14 +34,73 @@ interface Props {
 }
 
 export default function InvoiceModal({ bill, settings, onClose }: Props) {
+  const { logAction } = useData();
   const [paper, setPaper] = useState<PaperSize>(settings.defaultPaper);
   const [heightMm, setHeightMm] = useState(200);
   const sheetRef = useRef<HTMLDivElement>(null);
+
+  // The PDF is built ahead of time so the share sheet can open the instant the button is tapped.
+  const [pdf, setPdf] = useState<{ state: "preparing" } | { state: "ready"; file: File } | { state: "error" }>({ state: "preparing" });
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState("");
 
   useLayoutEffect(() => {
     const el = sheetRef.current?.querySelector<HTMLElement>(".invoice-sheet");
     if (el && paper !== "a4") setHeightMm(Math.ceil((el.offsetHeight * 25.4) / 96) + 6);
   }, [paper, bill, settings]);
+
+  useEffect(() => {
+    let stale = false;
+    setPdf({ state: "preparing" });
+    // Wait for the modal's entrance animation so building the PDF doesn't make it stutter.
+    const timer = setTimeout(() => {
+      buildInvoicePdf(bill, settings).then(
+        (file) => !stale && setPdf({ state: "ready", file }),
+        () => !stale && setPdf({ state: "error" }),
+      );
+    }, 450);
+    return () => {
+      stale = true;
+      clearTimeout(timer);
+    };
+  }, [bill, settings]);
+
+  /** The file to act on: the pre-built one, or build it now if the tap came first. */
+  const getFile = async () => (pdf.state === "ready" ? pdf.file : buildInvoicePdf(bill, settings));
+
+  const onShare = async () => {
+    setBusy(true);
+    setNote("");
+    try {
+      const outcome = await shareInvoicePdf(await getFile(), bill, settings);
+      if (outcome === "shared") logAction("generated", "bill", `Bill ${bill.number} PDF shared via the share sheet · ${bill.customer.name}`);
+      if (outcome === "downloaded") {
+        logAction("generated", "bill", `Bill ${bill.number} PDF downloaded and WhatsApp chat opened · ${bill.customer.name}`);
+        setNote("PDF saved to this device and the customer's WhatsApp chat was opened. Attach the PDF there to send it.");
+      }
+    } catch {
+      // PDF generation itself failed: still get the customer's chat open with the text summary.
+      window.open(whatsappUrl(bill, settings), "_blank", "noopener");
+      logAction("generated", "bill", `Bill ${bill.number} summary opened in WhatsApp · ${bill.customer.name}`);
+      setNote("Couldn't create the PDF, so the invoice summary was opened in WhatsApp instead.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const onDownload = async () => {
+    setBusy(true);
+    try {
+      downloadFile(await getFile());
+      logAction("generated", "bill", `Bill ${bill.number} PDF downloaded · ${bill.customer.name}`);
+    } catch {
+      setNote("Couldn't create the PDF. Use Print → Save as PDF instead.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const nativeShare = pdf.state === "ready" && canShareFile(pdf.file);
 
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -67,10 +129,25 @@ export default function InvoiceModal({ bill, settings, onClose }: Props) {
           </Button>
           <Segmented id="paper" options={PAPERS} value={paper} onChange={setPaper} />
           <div className="ml-auto flex gap-2">
-            <AnchorButton variant="whatsapp" href={whatsappUrl(bill, settings)} target="_blank" rel="noopener noreferrer">
-              <Share2 size={16} /> <span className="hidden sm:inline">Share via</span> WhatsApp
-            </AnchorButton>
-            <Button variant="primary" onClick={() => window.print()}>
+            <Button onClick={onDownload} disabled={busy} className="!px-3" aria-label="Download PDF" title="Download PDF">
+              <Download size={16} />
+            </Button>
+            <Button
+              variant="whatsapp"
+              onClick={onShare}
+              disabled={busy}
+              title={nativeShare ? "Opens your share sheet with the PDF attached" : "Downloads the PDF and opens the customer's WhatsApp chat"}
+            >
+              {busy || pdf.state === "preparing" ? <Loader2 size={16} className="animate-spin" /> : <Share2 size={16} />}
+              <span className="hidden sm:inline">Share via</span> WhatsApp
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => {
+                logAction("generated", "bill", `Bill ${bill.number} printed · ${bill.customer.name}`);
+                window.print();
+              }}
+            >
               <Printer size={16} /> Print
             </Button>
           </div>
@@ -85,8 +162,11 @@ export default function InvoiceModal({ bill, settings, onClose }: Props) {
         className="px-2 py-5 safe-bottom sm:py-8"
       >
         <InvoiceView bill={bill} settings={settings} paper={paper} />
-        <p className="no-print mx-auto mt-4 max-w-md text-center text-xs text-subtle">
-          Tip: choose “Save as PDF” in the print dialog to get a PDF copy.
+        <p role="status" className="no-print mx-auto mt-4 max-w-md text-center text-xs text-subtle">
+          {note ||
+            (pdf.state === "preparing"
+              ? "Preparing the PDF…"
+              : "Share sends the invoice as a PDF file. Print → “Save as PDF” also works.")}
         </p>
       </motion.div>
     </motion.div>,

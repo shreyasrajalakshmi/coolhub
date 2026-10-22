@@ -59,7 +59,7 @@ export default function Drawer({ title, subtitle, onClose, children, variant = "
         dragConstraints={{ top: 0, bottom: 0 }}
         dragElastic={{ top: 0, bottom: 0.6 }}
         onDragEnd={(_, info) => (info.offset.y > 120 || info.velocity.y > 700) && onClose()}
-        className={`relative flex w-full flex-col overflow-hidden border border-line bg-surface/95 ${
+        className={`relative flex w-full flex-col overflow-hidden border border-line bg-panel ${
           side
             ? "h-dvh max-w-xl rounded-l-3xl border-r-0"
             : desktop

@@ -33,7 +33,20 @@ On iPhone / iPad it opens the two-step guide: Share → *Add to Home Screen*.
 | `/jobs` | Kanban board (drag between Pending → In Progress → Ready for Billing) or list; **Convert to Invoice** |
 | `/customers` | Directory with repair history; filled automatically from bills and jobs |
 | `/analytics` | Daily earnings for Today / Yesterday / a specific date / custom range, Cash vs UPI split, invoices per day and average ticket |
+| `/activity` | Activity log: bills created / deleted / shared, job added / updated / deleted, settings changes, each with exact time and device; search, type chips, area and date filters |
 | `/settings` | Shop profile, service presets, numbering, tax, theme, install, backup / restore |
+
+### Sharing an invoice on WhatsApp
+
+The invoice modal builds a real A4 PDF (`CoolHub_Invoice_<BillNo>.pdf`) in the browser as soon as it opens.
+- **Share via WhatsApp** – on phones (Web Share API with files) it opens the native share sheet with the PDF attached; pick WhatsApp there.
+- **Fallback** (desktop / browsers without file sharing) – the PDF is downloaded and `https://wa.me/<91><customer phone>?text=<summary>` opens the customer's chat so you can attach it.
+- The customer's number is cleaned (spaces, dashes and leading zeros removed) and the country code from Settings (default 91) is added when missing.
+- A **Download** button saves the PDF without sharing. Code: `lib/invoicePdf.tsx`, `lib/shareInvoice.ts`.
+
+Deleting a bill, job or customer always asks first in a confirmation dialog; revenue, KPIs and analytics update immediately.
+The activity log is stored on the device with the rest of the data (IndexedDB, newest 5,000 entries kept) and is included in Backup / Restore.
+Settings edits are grouped: typing a phone number records one "Settings updated: Phone" entry, not one per keystroke.
 
 Revenue is counted on the day a bill is marked **paid**; pending bills show up under "Still unpaid".
 
