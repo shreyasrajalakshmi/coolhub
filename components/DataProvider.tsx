@@ -59,9 +59,11 @@ export default function DataProvider({ children }: { children: React.ReactNode }
   const settingsRef = useRef(settings);
   const contactsRef = useRef(contacts);
   const jobsRef = useRef(jobs);
+  const billsRef = useRef(bills);
   settingsRef.current = settings;
   contactsRef.current = contacts;
   jobsRef.current = jobs;
+  billsRef.current = bills;
 
   const reload = useCallback(async () => {
     try {
@@ -138,11 +140,13 @@ export default function DataProvider({ children }: { children: React.ReactNode }
   const saveBill = useCallback<DataContextValue["saveBill"]>(
     (bill, isNew) =>
       guard(async () => {
-        const saved: Bill = { ...bill, customerId: await ensureContact(bill.customer) };
+        const prev = billsRef.current.find((b) => b.id === bill.id);
+        const now = new Date().toISOString();
+        const paidAt = bill.status === "paid" ? (bill.paidAt ?? (prev?.status === "paid" ? (prev.paidAt ?? prev.createdAt) : now)) : undefined;
+        const saved: Bill = { ...bill, paidAt, customerId: await ensureContact(bill.customer) };
         await db.putBill(saved);
         if (saved.jobId) {
           const job = jobsRef.current.find((j) => j.id === saved.jobId);
-          const now = new Date().toISOString();
           if (job) await db.putJob({ ...job, billId: saved.id, status: "completed", completedAt: job.completedAt ?? now, updatedAt: now });
         }
         if (isNew) updateSettings({ nextNumber: settingsRef.current.nextNumber + 1 });
@@ -166,7 +170,7 @@ export default function DataProvider({ children }: { children: React.ReactNode }
   const setBillStatus = useCallback<DataContextValue["setBillStatus"]>(
     (bill, status) =>
       guard(async () => {
-        await db.putBill({ ...bill, status });
+        await db.putBill({ ...bill, status, paidAt: status === "paid" ? new Date().toISOString() : undefined });
         await reload();
       }),
     [guard, reload],

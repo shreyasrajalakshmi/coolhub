@@ -226,7 +226,7 @@ option {
   }
 
   .print-modal,
-  .print-modal * {
+  .print-modal *:not(.paid-seal):not(.paid-seal *) {
     transform: none !important;
     opacity: 1 !important;
     animation: none !important;

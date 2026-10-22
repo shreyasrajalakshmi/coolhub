@@ -21,6 +21,8 @@ export interface Bill {
   customerId?: string;
   jobId?: string;
   createdAt: string; // ISO timestamp
+  /** When the bill was marked paid; printed on the PAID seal. */
+  paidAt?: string;
   customer: Customer;
   items: BillItem[];
   discountType: DiscountType;

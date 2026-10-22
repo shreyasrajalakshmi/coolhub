@@ -10,7 +10,7 @@ import { type Bill, type BillStatus, type Contact, type DiscountType, type Job, 
 import AnimatedNumber from "./AnimatedNumber";
 import CustomerFields from "./CustomerFields";
 import { useData } from "./DataProvider";
-import { Button } from "./ui";
+import { Button, Switch } from "./ui";
 
 interface FormItem {
   id: string;
@@ -245,29 +245,6 @@ export default function BillForm({ editing = null, job = null, contact = null, o
         </dl>
 
         <div>
-          <span className="label">Payment</span>
-          <div className="grid grid-cols-2 gap-2">
-            {(["paid", "pending"] as const).map((s) => (
-              <Button
-                key={s}
-                type="button"
-                onClick={() => setStatus(s)}
-                aria-pressed={status === s}
-                className={
-                  status === s
-                    ? s === "paid"
-                      ? "!border-emerald-400/60 !bg-emerald-400/15 !text-ok-fg"
-                      : "!border-red-500/60 !bg-red-500/15 !text-accent-fg"
-                    : "!text-subtle"
-                }
-              >
-                {s === "paid" ? "Paid" : "Pending"}
-              </Button>
-            ))}
-          </div>
-        </div>
-
-        <div>
           <label className="label" htmlFor="notes">Notes (optional)</label>
           <textarea id="notes" className="field" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Warranty, next service date…" />
         </div>
@@ -287,11 +264,19 @@ export default function BillForm({ editing = null, job = null, contact = null, o
         )}
       </AnimatePresence>
 
-      <div className="sticky bottom-0 -mx-5 -mb-5 flex gap-2 border-t border-line bg-panel/95 px-5 py-4 backdrop-blur">
-        <Button type="button" onClick={onCancel}>Cancel</Button>
-        <Button type="submit" variant="primary" disabled={saving} className="flex-1 !py-3.5 text-base">
-          <Save size={18} /> {editing ? "Update Bill" : "Save & Generate Invoice"}
-        </Button>
+      <div className="sticky bottom-0 -mx-5 -mb-5 space-y-3 border-t border-line bg-panel/95 px-5 py-4 backdrop-blur">
+        <Switch
+          checked={status === "paid"}
+          onChange={(paid) => setStatus(paid ? "paid" : "pending")}
+          label="Mark as Paid & Stamp Seal"
+          description={status === "paid" ? "Saved as paid, with the PAID seal on the invoice" : "Off: saved as pending, no seal"}
+        />
+        <div className="flex gap-2">
+          <Button type="button" onClick={onCancel}>Cancel</Button>
+          <Button type="submit" variant="primary" disabled={saving} className="flex-1 !py-3.5 text-base">
+            <Save size={18} /> {editing ? "Update Bill" : "Save & Generate Invoice"}
+          </Button>
+        </div>
       </div>
     </form>
   );

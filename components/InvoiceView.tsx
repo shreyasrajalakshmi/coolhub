@@ -1,17 +1,23 @@
 import type { Bill, PaperSize, Settings } from "@/lib/types";
-import { formatDateTime, formatMoney } from "@/lib/format";
+import { formatDate, formatDateTime, formatMoney } from "@/lib/format";
+import PaidSeal from "./PaidSeal";
 
 interface Props {
   bill: Bill;
   settings: Settings;
   paper: PaperSize;
+  /** Show the PAID seal (only ever drawn on bills that are actually paid). */
+  seal?: boolean;
 }
 
-export default function InvoiceView({ bill, settings, paper }: Props) {
+const sealDate = (bill: Bill) => formatDate(bill.paidAt ?? bill.createdAt).toUpperCase();
+
+export default function InvoiceView({ bill, settings, paper, seal = true }: Props) {
+  const sealed = seal && bill.status === "paid";
   return paper === "a4" ? (
-    <A4Invoice bill={bill} settings={settings} />
+    <A4Invoice bill={bill} settings={settings} sealed={sealed} />
   ) : (
-    <ThermalInvoice bill={bill} settings={settings} paper={paper} />
+    <ThermalInvoice bill={bill} settings={settings} paper={paper} sealed={sealed} />
   );
 }
 
@@ -27,7 +33,7 @@ function StatusBadge({ status }: { status: Bill["status"] }) {
   );
 }
 
-function A4Invoice({ bill, settings }: { bill: Bill; settings: Settings }) {
+function A4Invoice({ bill, settings, sealed }: { bill: Bill; settings: Settings; sealed: boolean }) {
   const { customer } = bill;
   return (
     <div className="invoice-sheet relative isolate mx-auto w-full max-w-[210mm] overflow-hidden bg-white p-5 text-slate-900 shadow-lg sm:p-10">
@@ -139,9 +145,18 @@ function A4Invoice({ bill, settings }: { bill: Bill; settings: Settings }) {
 
       <div className="mt-8 flex items-end justify-between gap-6 text-sm text-slate-600">
         <p className="max-w-sm">{settings.footerNote}</p>
-        <div className="shrink-0 text-center">
-          <div className="mb-1 w-36 border-t border-slate-400" />
-          <p className="text-xs">Authorised Signature</p>
+        {/* The seal sits over the signature area, like a stamp pressed beside a signature. */}
+        <div className="relative w-44 shrink-0 text-center" style={sealed ? { height: 156 } : undefined}>
+          {sealed && (
+            <div className="absolute" style={{ left: 22, top: 0, width: 128, height: 128 }}>
+              <PaidSeal date={sealDate(bill)} size={128} />
+            </div>
+          )}
+          <div className={sealed ? "absolute inset-x-0 bottom-0" : ""}>
+            <div className="mx-auto mb-1 mt-8 w-40 border-t border-dotted border-slate-500" />
+            <p className="text-xs">Authorised Signature</p>
+            <p className="text-[11px] font-semibold text-slate-500">{settings.shopName}</p>
+          </div>
         </div>
       </div>
     </div>
@@ -152,10 +167,12 @@ function ThermalInvoice({
   bill,
   settings,
   paper,
+  sealed,
 }: {
   bill: Bill;
   settings: Settings;
   paper: Exclude<PaperSize, "a4">;
+  sealed: boolean;
 }) {
   const width = paper === "t58" ? "58mm" : "80mm";
   const Dash = () => <div className="my-1.5 border-t border-dashed border-black" />;
@@ -211,9 +228,13 @@ function ThermalInvoice({
         <span>TOTAL</span>
         <span>{formatMoney(bill.total)}</span>
       </div>
-      <p className="mt-1 text-center font-bold uppercase">
-        {bill.status === "paid" ? "*** PAID ***" : "Payment Pending"}
-      </p>
+      {sealed ? (
+        <div className="mt-2 flex justify-center">
+          <PaidSeal date={sealDate(bill)} size={paper === "t58" ? 96 : 116} bold />
+        </div>
+      ) : (
+        <p className="mt-1 text-center font-bold uppercase">{bill.status === "paid" ? "*** PAID ***" : "Payment Pending"}</p>
+      )}
       {bill.notes && <p className="mt-1 whitespace-pre-line">Note: {bill.notes}</p>}
       <Dash />
       <p className="text-center">{settings.footerNote}</p>

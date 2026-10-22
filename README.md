@@ -36,6 +36,12 @@ On iPhone / iPad it opens the two-step guide: Share → *Add to Home Screen*.
 Deleting a bill or job asks for confirmation first, then removes it from the device immediately (lists, dashboard totals and backups all follow).
 Customer names and phone numbers seen on bills and jobs are remembered on the device only to suggest them while typing and for Quick WhatsApp.
 
+### PAID seal
+
+The bill form has a **Mark as Paid & Stamp Seal** switch above Save (on by default). On: the bill is saved as paid and a round rubber-stamp seal
+(★ COOL HUB ★, PAID, payment date) is printed beside the Authorised Signature, on A4, the PDF and thermal receipts. Off: the bill is saved as pending and the area stays clean.
+The preview has a view-only **Show PAID seal** switch to leave the stamp off one particular print / PDF. The seal is vector SVG (`components/PaidSeal.tsx`).
+
 ### Sharing an invoice on WhatsApp
 
 The invoice modal builds a real A4 PDF (`CoolHub_Invoice_<BillNo>.pdf`) in the browser as soon as it opens.

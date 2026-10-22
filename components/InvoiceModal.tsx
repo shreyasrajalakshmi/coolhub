@@ -10,7 +10,7 @@ import { whatsappUrl } from "@/lib/format";
 import { softSpring } from "@/lib/motion";
 import type { Bill, PaperSize, Settings } from "@/lib/types";
 import InvoiceView from "./InvoiceView";
-import { Button, Segmented } from "./ui";
+import { Button, Segmented, Switch } from "./ui";
 
 const PAPERS: { value: PaperSize; label: string }[] = [
   { value: "a4", label: "A4 / PDF" },
@@ -34,6 +34,7 @@ interface Props {
 
 export default function InvoiceModal({ bill, settings, onClose }: Props) {
   const [paper, setPaper] = useState<PaperSize>(settings.defaultPaper);
+  const [seal, setSeal] = useState(true); // view-only: hides the stamp on this print / PDF without changing the bill
   const [heightMm, setHeightMm] = useState(200);
   const sheetRef = useRef<HTMLDivElement>(null);
 
@@ -52,7 +53,7 @@ export default function InvoiceModal({ bill, settings, onClose }: Props) {
     setPdf({ state: "preparing" });
     // Wait for the modal's entrance animation so building the PDF doesn't make it stutter.
     const timer = setTimeout(() => {
-      buildInvoicePdf(bill, settings).then(
+      buildInvoicePdf(bill, settings, seal).then(
         (file) => !stale && setPdf({ state: "ready", file }),
         () => !stale && setPdf({ state: "error" }),
       );
@@ -61,10 +62,10 @@ export default function InvoiceModal({ bill, settings, onClose }: Props) {
       stale = true;
       clearTimeout(timer);
     };
-  }, [bill, settings]);
+  }, [bill, settings, seal]);
 
   /** The file to act on: the pre-built one, or build it now if the tap came first. */
-  const getFile = async () => (pdf.state === "ready" ? pdf.file : buildInvoicePdf(bill, settings));
+  const getFile = async () => (pdf.state === "ready" ? pdf.file : buildInvoicePdf(bill, settings, seal));
 
   const onShare = async () => {
     setBusy(true);
@@ -149,7 +150,12 @@ export default function InvoiceModal({ bill, settings, onClose }: Props) {
         transition={{ ...softSpring, delay: 0.1 }}
         className="px-2 py-5 safe-bottom sm:py-8"
       >
-        <InvoiceView bill={bill} settings={settings} paper={paper} />
+        {bill.status === "paid" && (
+          <div className="no-print mx-auto mb-3 max-w-sm">
+            <Switch checked={seal} onChange={setSeal} label="Show PAID seal" description="On the preview, print and PDF" />
+          </div>
+        )}
+        <InvoiceView bill={bill} settings={settings} paper={paper} seal={seal} />
         <p role="status" className="no-print mx-auto mt-4 max-w-md text-center text-xs text-subtle">
           {note ||
             (pdf.state === "preparing"

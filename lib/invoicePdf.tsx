@@ -15,7 +15,7 @@ const loaded = (img: HTMLImageElement) =>
  * Renders the A4 invoice off-screen and turns it into a real PDF `File`.
  * The libraries are imported lazily so they never weigh on the first page load.
  */
-export async function buildInvoicePdf(bill: Bill, settings: Settings): Promise<File> {
+export async function buildInvoicePdf(bill: Bill, settings: Settings, seal = true): Promise<File> {
   const [{ default: html2canvas }, { jsPDF }] = await Promise.all([import("html2canvas-pro"), import("jspdf")]);
 
   const host = document.createElement("div");
@@ -25,14 +25,14 @@ export async function buildInvoicePdf(bill: Bill, settings: Settings): Promise<F
   const root = createRoot(host);
 
   try {
-    flushSync(() => root.render(<InvoiceView bill={bill} settings={settings} paper="a4" />));
+    flushSync(() => root.render(<InvoiceView bill={bill} settings={settings} paper="a4" seal={seal} />));
     await Promise.all([document.fonts?.ready, ...Array.from(host.querySelectorAll("img"), loaded)]);
 
     const sheet = host.querySelector<HTMLElement>(".invoice-sheet");
     if (!sheet) throw new Error("Invoice did not render");
 
     const canvas = await html2canvas(sheet, {
-      scale: 2,
+      scale: 3, // keeps the seal and small print crisp
       backgroundColor: "#ffffff",
       useCORS: true,
       logging: false,

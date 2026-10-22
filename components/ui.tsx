@@ -37,6 +37,32 @@ export function AnchorButton({ variant = "secondary", className = "", ...rest }:
   return <motion.a whileHover={hover} whileTap={tap} transition={spring} className={`${VARIANT_CLASS[variant]} ${className}`} {...rest} />;
 }
 
+/** Accessible on/off switch with a sliding knob. */
+export function Switch({ checked, onChange, label, description, disabled }: { checked: boolean; onChange: (v: boolean) => void; label: string; description?: string; disabled?: boolean }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      disabled={disabled}
+      onClick={() => onChange(!checked)}
+      className="flex w-full cursor-pointer items-center gap-3 rounded-xl border border-line bg-surface-2 px-3 py-2.5 text-left transition-colors hover:border-fg/25 disabled:cursor-not-allowed disabled:opacity-50"
+    >
+      <span className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${checked ? "bg-red-600" : "bg-fill-xstrong"}`}>
+        <motion.span
+          className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow"
+          animate={{ left: checked ? 22 : 2 }}
+          transition={spring}
+        />
+      </span>
+      <span className="min-w-0">
+        <span className="block text-sm font-semibold">{label}</span>
+        {description && <span className="block text-xs text-subtle">{description}</span>}
+      </span>
+    </button>
+  );
+}
+
 /** Red trash icon with a glowing hover state; used for every delete action so they look and behave alike. */
 export function DeleteButton({ label, onClick, className = "" }: { label: string; onClick: () => void; className?: string }) {
   return (
