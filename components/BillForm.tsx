@@ -6,7 +6,7 @@ import { Plus, Save, Trash2, Zap } from "lucide-react";
 import { computeTotals, lineTotal } from "@/lib/calc";
 import { formatMoney, newId } from "@/lib/format";
 import { softSpring } from "@/lib/motion";
-import { type Bill, type BillStatus, type Contact, type DiscountType, type Job, type PaymentMethod, type ServicePreset } from "@/lib/types";
+import { type Bill, type BillStatus, type Contact, type DiscountType, type Job, type ServicePreset } from "@/lib/types";
 import AnimatedNumber from "./AnimatedNumber";
 import CustomerFields from "./CustomerFields";
 import { useData } from "./DataProvider";
@@ -47,7 +47,6 @@ export default function BillForm({ editing = null, job = null, contact = null, o
   const [discountType, setDiscountType] = useState<DiscountType>(editing?.discountType ?? "amount");
   const [discountValue, setDiscountValue] = useState(editing && editing.discountValue ? String(editing.discountValue) : "");
   const [status, setStatus] = useState<BillStatus>(editing?.status ?? "paid");
-  const [method, setMethod] = useState<PaymentMethod>(editing?.paymentMethod ?? "cash");
   const [notes, setNotes] = useState(editing?.notes ?? (job && job.notes ? `Job ${job.number}: ${job.notes}` : ""));
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -97,7 +96,6 @@ export default function BillForm({ editing = null, job = null, contact = null, o
       tax,
       total,
       status,
-      paymentMethod: status === "paid" ? method : undefined,
       notes: notes.trim(),
     };
     setSaving(true);
@@ -268,21 +266,6 @@ export default function BillForm({ editing = null, job = null, contact = null, o
             ))}
           </div>
         </div>
-
-        <AnimatePresence initial={false}>
-          {status === "paid" && (
-            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-              <span className="label">Paid via</span>
-              <div className="grid grid-cols-2 gap-2 pb-1">
-                {(["cash", "upi"] as const).map((m) => (
-                  <Button key={m} type="button" onClick={() => setMethod(m)} aria-pressed={method === m} className={method === m ? "!border-red-500/60 !bg-red-500/15 !text-accent-fg" : "!text-subtle"}>
-                    {m === "cash" ? "Cash" : "UPI / Online"}
-                  </Button>
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         <div>
           <label className="label" htmlFor="notes">Notes (optional)</label>

@@ -1,9 +1,9 @@
 # Cool Hub
 
 Offline-first PWA for **Cool Hub** – Car A/C Fitting, Fridge, Washing Machine, Oven Repairing & Service, Secondhand Sale.
-Billing, service jobs, customers and daily revenue analytics in a black-and-red (or light) interface.
+Billing, service jobs and shop settings in a black-and-red (or light) interface.
 Next.js (App Router) · Tailwind CSS v4 · Framer Motion · TypeScript · lucide-react.
-There is no login and no backend: the app opens straight on the dashboard, and data lives in IndexedDB (bills, jobs, customers) and localStorage (settings, theme).
+There is no login and no backend: the app opens straight on the dashboard, and data lives in IndexedDB (bills, jobs and remembered customer names) and localStorage (settings, theme).
 
 ## Run
 
@@ -28,13 +28,13 @@ On iPhone / iPad it opens the two-step guide: Share → *Add to Home Screen*.
 
 | Route | What it does |
 |---|---|
-| `/` Overview | KPIs (revenue, active calls, completed jobs, pending invoices), activity ticker, quick actions, recent jobs & invoices |
-| `/billing` | Invoice history with filter chips and search; **New Bill** drawer (items, discount, GST, Cash/UPI, PDF/print, WhatsApp) |
-| `/jobs` | Kanban board (drag between Pending → In Progress → Ready for Billing) or list; **Convert to Invoice** |
-| `/customers` | Directory with repair history; filled automatically from bills and jobs |
-| `/analytics` | Daily earnings for Today / Yesterday / a specific date / custom range, Cash vs UPI split, invoices per day and average ticket |
-| `/activity` | Activity log: bills created / deleted / shared, job added / updated / deleted, settings changes, each with exact time and device; search, type chips, area and date filters |
-| `/settings` | Shop profile, service presets, numbering, tax, theme, install, backup / restore |
+| `/` Overview | KPIs (revenue, active calls, completed jobs, pending invoices), activity ticker, quick actions, recent jobs & invoices, **Install** button |
+| `/billing` | Invoice history with filter chips and search; **New Bill** drawer (items, discount, GST, PDF/print, WhatsApp); a red trash button on every invoice |
+| `/jobs` | Kanban board (drag between Pending → In Progress → Ready for Billing) or list; **Convert to Invoice**; a red trash button on every job |
+| `/settings` | Shop profile & visiting-card details, service presets, numbering, tax, theme, install, backup / restore |
+
+Deleting a bill or job asks for confirmation first, then removes it from the device immediately (lists, dashboard totals and backups all follow).
+Customer names and phone numbers seen on bills and jobs are remembered on the device only to suggest them while typing and for Quick WhatsApp.
 
 ### Sharing an invoice on WhatsApp
 
@@ -44,11 +44,6 @@ The invoice modal builds a real A4 PDF (`CoolHub_Invoice_<BillNo>.pdf`) in the b
 - The customer's number is cleaned (spaces, dashes and leading zeros removed) and the country code from Settings (default 91) is added when missing.
 - A **Download** button saves the PDF without sharing. Code: `lib/invoicePdf.tsx`, `lib/shareInvoice.ts`.
 
-Deleting a bill, job or customer always asks first in a confirmation dialog; revenue, KPIs and analytics update immediately.
-The activity log is stored on the device with the rest of the data (IndexedDB, newest 5,000 entries kept) and is included in Backup / Restore.
-Settings edits are grouped: typing a phone number records one "Settings updated: Phone" entry, not one per keystroke.
-
-Revenue is counted on the day a bill is marked **paid**; pending bills show up under "Still unpaid".
 
 ## Shop details
 
@@ -63,7 +58,8 @@ app/            layout (fonts, providers), template (page transitions), one fold
 components/     AppShell (sidebar / floating dock), DataProvider (state + IndexedDB), UIProvider (drawers & invoice),
                 InstallProvider / InstallButton / IosInstallHelp, ThemeProvider / ThemeToggle, Footer, Drawer,
                 BillForm, BillHistory, JobForm, JobCard, InvoiceView / Modal, QuickWhatsApp, Ticker, ui
-lib/            types (+ official profile & presets), calc, storage (IndexedDB), customers, format, motion
+lib/            types (+ official profile & presets), calc, storage (IndexedDB), customers, format, motion,
+                invoicePdf (PDF builder), shareInvoice (Web Share / download fallback)
 public/         manifest.json, sw.js, logo.jpg, watermark.png, icons/
 scripts/        make-icons.py  (rebuilds icons + watermark from scripts/assets/logo-source.jpg; needs Pillow)
 ```

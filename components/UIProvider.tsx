@@ -3,9 +3,8 @@
 import { AnimatePresence } from "framer-motion";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { createContext, Suspense, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Banknote, Smartphone, Trash2 } from "lucide-react";
-import { formatMoney } from "@/lib/format";
-import type { Bill, Contact, Job, PaymentMethod } from "@/lib/types";
+import { AlertTriangle, Trash2 } from "lucide-react";
+import type { Bill, Contact, Job } from "@/lib/types";
 import BillForm from "./BillForm";
 import { useData } from "./DataProvider";
 import Drawer from "./Drawer";
@@ -29,8 +28,6 @@ interface UIContextValue {
   openJob: (draft?: JobDraft) => void;
   viewInvoice: (bill: Bill) => void;
   openWhatsApp: (contact?: Contact | null) => void;
-  /** Asks how a pending bill was paid (Cash / UPI), then marks it paid. */
-  markPaid: (bill: Bill) => void;
   /** Styled yes/no prompt; resolves true only if the user confirms. */
   confirm: (opts: ConfirmOptions) => Promise<boolean>;
 }
@@ -71,12 +68,11 @@ function DeepLinks({ openBill, openJob }: Pick<UIContextValue, "openBill" | "ope
 }
 
 export default function UIProvider({ children }: { children: React.ReactNode }) {
-  const { settings, setBillStatus } = useData();
+  const { settings } = useData();
   const [billDraft, setBillDraft] = useState<BillDraft | null>(null);
   const [jobDraft, setJobDraft] = useState<JobDraft | null>(null);
   const [invoice, setInvoice] = useState<Bill | null>(null);
   const [whatsapp, setWhatsapp] = useState<{ contact: Contact | null } | null>(null);
-  const [paying, setPaying] = useState<Bill | null>(null);
   const [asking, setAsking] = useState<{ opts: ConfirmOptions; resolve: (ok: boolean) => void } | null>(null);
 
   const openBill = useCallback((d: BillDraft = {}) => setBillDraft(d), []);
@@ -84,22 +80,16 @@ export default function UIProvider({ children }: { children: React.ReactNode }) 
   const viewInvoice = useCallback((b: Bill) => setInvoice(b), []);
   const openWhatsApp = useCallback((c: Contact | null = null) => setWhatsapp({ contact: c }), []);
 
-  const markPaid = useCallback((b: Bill) => setPaying(b), []);
   const confirm = useCallback((opts: ConfirmOptions) => new Promise<boolean>((resolve) => setAsking({ opts, resolve })), []);
   const answer = (ok: boolean) => {
     asking?.resolve(ok);
     setAsking(null);
   };
   const value = useMemo(
-    () => ({ openBill, openJob, viewInvoice, openWhatsApp, markPaid, confirm }),
-    [openBill, openJob, viewInvoice, openWhatsApp, markPaid, confirm],
+    () => ({ openBill, openJob, viewInvoice, openWhatsApp, confirm }),
+    [openBill, openJob, viewInvoice, openWhatsApp, confirm],
   );
 
-  const pay = async (method: PaymentMethod) => {
-    if (!paying) return;
-    await setBillStatus(paying, "paid", method);
-    setPaying(null);
-  };
   const closeBill = useCallback(() => setBillDraft(null), []);
   const closeJob = useCallback(() => setJobDraft(null), []);
 
@@ -150,19 +140,6 @@ export default function UIProvider({ children }: { children: React.ReactNode }) 
               </Button>
               <Button variant="primary" onClick={() => answer(true)}>
                 <Trash2 size={16} /> {asking.opts.confirmLabel ?? "Delete"}
-              </Button>
-            </div>
-          </Drawer>
-        )}
-        {paying && (
-          <Drawer key="pay" title="Mark as paid" subtitle={`${paying.number} · ${paying.customer.name} · ${formatMoney(paying.total)}`} onClose={() => setPaying(null)} variant="dialog">
-            <p className="mb-3 text-sm text-muted">How did the customer pay?</p>
-            <div className="grid grid-cols-2 gap-3">
-              <Button onClick={() => pay("cash")} className="flex-col !gap-2 !py-5">
-                <Banknote size={24} className="text-ok-fg" /> Cash
-              </Button>
-              <Button onClick={() => pay("upi")} className="flex-col !gap-2 !py-5">
-                <Smartphone size={24} className="text-ok-fg" /> UPI / Online
               </Button>
             </div>
           </Drawer>

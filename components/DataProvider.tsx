@@ -3,55 +3,34 @@
 import { motion } from "framer-motion";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { resolveContact } from "@/lib/customers";
-import { SETTING_LABELS } from "@/lib/audit";
-import { describeDevice } from "@/lib/device";
-import { formatBillNumber, formatJobNumber, formatMoney, newId } from "@/lib/format";
+import { formatBillNumber, formatJobNumber } from "@/lib/format";
 import * as db from "@/lib/storage";
-import {
-  DEFAULT_SETTINGS,
-  type AuditCategory,
-  type AuditEntry,
-  type AuditKind,
-  type Bill,
-  type BillStatus,
-  type Contact,
-  type Job,
-  type JobStatus,
-  type PaymentMethod,
-  type Settings,
-} from "@/lib/types";
+import { DEFAULT_SETTINGS, type Bill, type BillStatus, type Contact, type Job, type JobStatus, type Settings } from "@/lib/types";
 import Logo from "./Logo";
 
 export interface BackupData {
   bills: Bill[];
   jobs?: Job[];
   contacts?: Contact[];
-  audit?: AuditEntry[];
   settings?: Partial<Settings>;
 }
-
-const STATUS_LABEL: Record<JobStatus, string> = { pending: "Pending", "in-progress": "In Progress", completed: "Completed" };
 
 interface DataContextValue {
   settings: Settings;
   updateSettings: (patch: Partial<Settings>) => void;
   bills: Bill[];
   jobs: Job[];
+  /** Customers seen on bills and jobs; used for name / phone suggestions and Quick WhatsApp. */
   contacts: Contact[];
-  audit: AuditEntry[];
   storageError: boolean;
-  /** Adds an entry to the activity log (device and time are filled in automatically). */
-  logAction: (kind: AuditKind, category: AuditCategory, summary: string) => void;
   nextBillNumber: () => string;
   nextJobNumber: () => string;
   saveBill: (bill: Bill, isNew: boolean) => Promise<Bill>;
   removeBill: (id: string) => Promise<void>;
-  setBillStatus: (bill: Bill, status: BillStatus, method?: PaymentMethod) => Promise<void>;
+  setBillStatus: (bill: Bill, status: BillStatus) => Promise<void>;
   saveJob: (job: Job, isNew: boolean) => Promise<Job>;
   removeJob: (id: string) => Promise<void>;
   setJobStatus: (job: Job, status: JobStatus) => Promise<void>;
-  saveContact: (contact: Contact) => Promise<void>;
-  removeContact: (id: string) => Promise<void>;
   importAll: (data: BackupData) => Promise<void>;
 }
 
@@ -74,28 +53,25 @@ export default function DataProvider({ children }: { children: React.ReactNode }
   const [bills, setBills] = useState<Bill[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
-  const [audit, setAudit] = useState<AuditEntry[]>([]);
   const [storageError, setStorageError] = useState(false);
 
   // Latest values for callbacks that must not go stale between renders.
   const settingsRef = useRef(settings);
   const contactsRef = useRef(contacts);
   const jobsRef = useRef(jobs);
-  const billsRef = useRef(bills);
   settingsRef.current = settings;
   contactsRef.current = contacts;
   jobsRef.current = jobs;
-  billsRef.current = bills;
 
   const reload = useCallback(async () => {
     try {
-      const [rawBills, rawJobs, rawContacts, rawAudit] = await Promise.all([db.getAllBills(), db.getAllJobs(), db.getAllContacts(), db.getAllAudit()]);
+      const [rawBills, rawJobs, rawContacts] = await Promise.all([db.getAllBills(), db.getAllJobs(), db.getAllContacts()]);
       let list = rawContacts;
       const dirtyContacts = new Map<string, Contact>();
       const dirtyBills: Bill[] = [];
       const dirtyJobs: Job[] = [];
 
-      // Link records created before the directory existed to a customer entry.
+      // Link records created before customer entries existed.
       const link = (customer: Bill["customer"]) => {
         const { contact, changed } = resolveContact(list, customer);
         if (changed) {
@@ -124,8 +100,6 @@ export default function DataProvider({ children }: { children: React.ReactNode }
       setBills(billsOut);
       setJobs(jobsOut);
       setContacts(list.slice().sort((a, b) => a.name.localeCompare(b.name)));
-      setAudit(rawAudit);
-      void db.trimAudit(rawAudit);
     } catch {
       setStorageError(true);
     }
@@ -136,38 +110,12 @@ export default function DataProvider({ children }: { children: React.ReactNode }
     reload().finally(() => setReady(true));
   }, [reload]);
 
-  /** Writes settings without logging (used for automatic changes such as the bill-number counter). */
-  const applySettings = useCallback((patch: Partial<Settings>) => {
+  const updateSettings = useCallback((patch: Partial<Settings>) => {
     const next = { ...settingsRef.current, ...patch };
     settingsRef.current = next;
     setSettings(next);
     db.saveSettings(next);
   }, []);
-
-  const logAction = useCallback<DataContextValue["logAction"]>((kind, category, summary) => {
-    const entry: AuditEntry = { id: newId(), at: new Date().toISOString(), kind, category, summary, device: describeDevice() };
-    setAudit((prev) => [entry, ...prev]);
-    db.putAudit(entry).catch(() => {
-      /* the log must never get in the way of the action itself */
-    });
-  }, []);
-
-  // Typing in a settings field changes it on every keystroke, so edits are grouped into one log entry.
-  const pendingKeys = useRef(new Set<string>());
-  const settingsTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const updateSettings = useCallback(
-    (patch: Partial<Settings>) => {
-      applySettings(patch);
-      Object.keys(patch).forEach((k) => pendingKeys.current.add(k));
-      clearTimeout(settingsTimer.current);
-      settingsTimer.current = setTimeout(() => {
-        const names = [...pendingKeys.current].map((k) => SETTING_LABELS[k as keyof Settings] ?? k);
-        pendingKeys.current.clear();
-        if (names.length) logAction("updated", "settings", `Settings updated: ${names.join(", ")}`);
-      }, 1500);
-    },
-    [applySettings, logAction],
-  );
 
   const ensureContact = useCallback(async (customer: Bill["customer"]) => {
     const { contact, changed } = resolveContact(contactsRef.current, customer);
@@ -190,57 +138,38 @@ export default function DataProvider({ children }: { children: React.ReactNode }
   const saveBill = useCallback<DataContextValue["saveBill"]>(
     (bill, isNew) =>
       guard(async () => {
-        const prev = bill.id ? (await db.getAllBills()).find((b) => b.id === bill.id) : undefined;
-        const now = new Date().toISOString();
-        const paid = bill.status === "paid";
-        const saved: Bill = {
-          ...bill,
-          customerId: await ensureContact(bill.customer),
-          // Revenue is counted on the day a bill was settled, so keep the original date when editing a paid bill.
-          paidAt: paid ? (bill.paidAt ?? (prev?.status === "paid" ? (prev.paidAt ?? prev.createdAt) : now)) : undefined,
-          paymentMethod: paid ? (bill.paymentMethod ?? prev?.paymentMethod ?? "cash") : bill.paymentMethod,
-        };
+        const saved: Bill = { ...bill, customerId: await ensureContact(bill.customer) };
         await db.putBill(saved);
         if (saved.jobId) {
           const job = jobsRef.current.find((j) => j.id === saved.jobId);
+          const now = new Date().toISOString();
           if (job) await db.putJob({ ...job, billId: saved.id, status: "completed", completedAt: job.completedAt ?? now, updatedAt: now });
         }
-        if (isNew) applySettings({ nextNumber: settingsRef.current.nextNumber + 1 });
+        if (isNew) updateSettings({ nextNumber: settingsRef.current.nextNumber + 1 });
         await reload();
-        logAction(isNew ? "created" : "updated", "bill", `Bill ${saved.number} ${isNew ? "created" : "updated"} for ${saved.customer.name} · ${formatMoney(saved.total)}`);
         return saved;
       }),
-    [ensureContact, guard, reload, applySettings, logAction],
+    [ensureContact, guard, reload, updateSettings],
   );
 
   const removeBill = useCallback(
     (id: string) =>
       guard(async () => {
-        const bill = billsRef.current.find((b) => b.id === id);
         await db.deleteBill(id);
         const linked = jobsRef.current.find((j) => j.billId === id);
         if (linked) await db.putJob({ ...linked, billId: undefined, updatedAt: new Date().toISOString() });
         await reload();
-        if (bill) logAction("deleted", "bill", `Bill ${bill.number} deleted · ${bill.customer.name} · ${formatMoney(bill.total)}`);
       }),
-    [guard, reload, logAction],
+    [guard, reload],
   );
 
   const setBillStatus = useCallback<DataContextValue["setBillStatus"]>(
-    (bill, status, method) =>
+    (bill, status) =>
       guard(async () => {
-        const paid = status === "paid";
-        await db.putBill({
-          ...bill,
-          status,
-          paidAt: paid ? new Date().toISOString() : undefined,
-          paymentMethod: paid ? (method ?? bill.paymentMethod ?? "cash") : bill.paymentMethod,
-        });
+        await db.putBill({ ...bill, status });
         await reload();
-        const via = paid ? ` (${(method ?? bill.paymentMethod ?? "cash") === "upi" ? "UPI" : "Cash"})` : "";
-        logAction("updated", "bill", `Bill ${bill.number} marked ${paid ? "Paid" : "Pending"}${via} · ${bill.customer.name} · ${formatMoney(bill.total)}`);
       }),
-    [guard, reload, logAction],
+    [guard, reload],
   );
 
   const saveJob = useCallback<DataContextValue["saveJob"]>(
@@ -254,23 +183,20 @@ export default function DataProvider({ children }: { children: React.ReactNode }
           completedAt: job.status === "completed" ? (job.completedAt ?? now) : undefined,
         };
         await db.putJob(saved);
-        if (isNew) applySettings({ nextJobNumber: settingsRef.current.nextJobNumber + 1 });
+        if (isNew) updateSettings({ nextJobNumber: settingsRef.current.nextJobNumber + 1 });
         await reload();
-        logAction(isNew ? "created" : "updated", "job", isNew ? `Job ${saved.number} added: ${saved.customer.name} · ${saved.appliance}` : `Job ${saved.number} updated: ${saved.customer.name} · ${saved.appliance}`);
         return saved;
       }),
-    [ensureContact, guard, reload, applySettings, logAction],
+    [ensureContact, guard, reload, updateSettings],
   );
 
   const removeJob = useCallback(
     (id: string) =>
       guard(async () => {
-        const job = jobsRef.current.find((j) => j.id === id);
         await db.deleteJob(id);
         await reload();
-        if (job) logAction("deleted", "job", `Job ${job.number} deleted · ${job.customer.name} · ${job.appliance}`);
       }),
-    [guard, reload, logAction],
+    [guard, reload],
   );
 
   const setJobStatus = useCallback<DataContextValue["setJobStatus"]>(
@@ -279,31 +205,8 @@ export default function DataProvider({ children }: { children: React.ReactNode }
         const now = new Date().toISOString();
         await db.putJob({ ...job, status, updatedAt: now, completedAt: status === "completed" ? (job.completedAt ?? now) : undefined });
         await reload();
-        logAction("updated", "job", `Job ${job.number} (${job.customer.name}) status changed: ${STATUS_LABEL[job.status]} → ${STATUS_LABEL[status]}`);
       }),
-    [guard, reload, logAction],
-  );
-
-  const saveContact = useCallback(
-    (contact: Contact) =>
-      guard(async () => {
-        const isNew = !contactsRef.current.some((c) => c.id === contact.id);
-        await db.putContact(contact);
-        await reload();
-        logAction(isNew ? "created" : "updated", "customer", `Customer ${contact.name} ${isNew ? "added" : "updated"}`);
-      }),
-    [guard, reload, logAction],
-  );
-
-  const removeContact = useCallback(
-    (id: string) =>
-      guard(async () => {
-        const c = contactsRef.current.find((x) => x.id === id);
-        await db.deleteContact(id);
-        await reload();
-        if (c) logAction("deleted", "customer", `Customer ${c.name} deleted from the directory`);
-      }),
-    [guard, reload, logAction],
+    [guard, reload],
   );
 
   const importAll = useCallback(
@@ -312,19 +215,17 @@ export default function DataProvider({ children }: { children: React.ReactNode }
         await db.putContacts(data.contacts ?? []);
         await db.putBills(data.bills);
         await db.putJobs(data.jobs ?? []);
-        await db.putAudits(data.audit ?? []);
         if (data.settings) {
           const s = data.settings;
-          applySettings({
+          updateSettings({
             ...s,
             nextNumber: Math.max(settingsRef.current.nextNumber, s.nextNumber ?? 1),
             nextJobNumber: Math.max(settingsRef.current.nextJobNumber, s.nextJobNumber ?? 1),
           });
         }
         await reload();
-        logAction("updated", "system", `Backup restored: ${data.bills.length} bills, ${(data.jobs ?? []).length} jobs, ${(data.contacts ?? []).length} customers`);
       }),
-    [guard, reload, applySettings, logAction],
+    [guard, reload, updateSettings],
   );
 
   const value = useMemo<DataContextValue>(
@@ -334,9 +235,7 @@ export default function DataProvider({ children }: { children: React.ReactNode }
       bills,
       jobs,
       contacts,
-      audit,
       storageError,
-      logAction,
       nextBillNumber: () => formatBillNumber(settingsRef.current),
       nextJobNumber: () => formatJobNumber(settingsRef.current),
       saveBill,
@@ -345,11 +244,9 @@ export default function DataProvider({ children }: { children: React.ReactNode }
       saveJob,
       removeJob,
       setJobStatus,
-      saveContact,
-      removeContact,
       importAll,
     }),
-    [settings, updateSettings, bills, jobs, contacts, audit, storageError, logAction, saveBill, removeBill, setBillStatus, saveJob, removeJob, setJobStatus, saveContact, removeContact, importAll],
+    [settings, updateSettings, bills, jobs, contacts, storageError, saveBill, removeBill, setBillStatus, saveJob, removeJob, setJobStatus, importAll],
   );
 
   if (!ready) {

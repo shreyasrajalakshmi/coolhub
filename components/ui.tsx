@@ -1,9 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { AnimatePresence, motion, type HTMLMotionProps } from "framer-motion";
-import { CheckCircle2, Clock, Loader2 } from "lucide-react";
-import type { ComponentProps } from "react";
+import { CheckCircle2, Clock, Loader2, Trash2 } from "lucide-react";
 import { softSpring, spring } from "@/lib/motion";
 import type { BillStatus, JobStatus } from "@/lib/types";
 
@@ -39,10 +37,25 @@ export function AnchorButton({ variant = "secondary", className = "", ...rest }:
   return <motion.a whileHover={hover} whileTap={tap} transition={spring} className={`${VARIANT_CLASS[variant]} ${className}`} {...rest} />;
 }
 
-const MotionLink = motion.create(Link);
-
-export function LinkButton({ variant = "secondary", className = "", ...rest }: ComponentProps<typeof MotionLink> & { variant?: Variant }) {
-  return <MotionLink whileHover={hover} whileTap={tap} transition={spring} className={`${VARIANT_CLASS[variant]} ${className}`} {...rest} />;
+/** Red trash icon with a glowing hover state; used for every delete action so they look and behave alike. */
+export function DeleteButton({ label, onClick, className = "" }: { label: string; onClick: () => void; className?: string }) {
+  return (
+    <motion.button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
+      aria-label={label}
+      title={label}
+      whileHover={{ scale: 1.1 }}
+      whileTap={{ scale: 0.9 }}
+      transition={spring}
+      className={`grid h-9 w-9 shrink-0 cursor-pointer place-items-center rounded-lg border border-red-500/30 bg-red-500/5 text-accent-fg transition-[box-shadow,background-color,border-color] hover:border-red-500/70 hover:bg-red-500/15 hover:shadow-[0_0_16px_rgba(239,68,68,0.55)] focus-visible:outline-2 focus-visible:outline-red-500 ${className}`}
+    >
+      <Trash2 size={16} />
+    </motion.button>
+  );
 }
 
 /* ---------- Status badges ---------- */

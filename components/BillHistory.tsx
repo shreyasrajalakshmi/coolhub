@@ -2,12 +2,12 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { useMemo, useState } from "react";
-import { Eye, IndianRupee, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { Eye, IndianRupee, Pencil, Plus, Search } from "lucide-react";
 import { formatDate, formatMoney, localDate } from "@/lib/format";
 import { rise, stagger } from "@/lib/motion";
 import type { Bill } from "@/lib/types";
 import AnimatedNumber from "./AnimatedNumber";
-import { BillStatusBadge, Button, EmptyState, PageHeader } from "./ui";
+import { BillStatusBadge, Button, DeleteButton, EmptyState, PageHeader } from "./ui";
 
 interface Props {
   bills: Bill[];
@@ -203,7 +203,7 @@ export default function BillHistory({ bills, onNew, onView, onEdit, onDelete, on
                 <div className="mt-3 flex gap-2 border-t border-line pt-3">
                   <Button onClick={() => onView(b)} className="flex-1 !py-2"><Eye size={16} /> View</Button>
                   <Button onClick={() => onEdit(b)} className="flex-1 !py-2"><Pencil size={16} /> Edit</Button>
-                  <Button variant="danger" onClick={() => onDelete(b)} className="!px-3 !py-2" aria-label="Delete bill"><Trash2 size={16} /></Button>
+                  <DeleteButton label={`Delete invoice ${b.number}`} onClick={() => onDelete(b)} className="!h-10 !w-10" />
                 </div>
               </motion.li>
             ))}

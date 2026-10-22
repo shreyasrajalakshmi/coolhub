@@ -1,6 +1,6 @@
 /* Cool Hub service worker – makes the whole app work offline. */
-const CACHE = "coolhub-v6";
-const ROUTES = ["/", "/billing", "/jobs", "/customers", "/analytics", "/activity", "/settings"];
+const CACHE = "coolhub-v7";
+const ROUTES = ["/", "/billing", "/jobs", "/settings"];
 const ASSETS = ["/manifest.json", "/logo.jpg", "/icons/icon-192.png", "/icons/icon-512.png"];
 
 // Cache every page plus the JS/CSS each page references, so routes that were

@@ -4,20 +4,17 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { BarChart3, History, LayoutDashboard, Receipt, Settings as SettingsIcon, Users, WifiOff, Wrench } from "lucide-react";
+import { LayoutDashboard, Receipt, Settings as SettingsIcon, WifiOff, Wrench } from "lucide-react";
 import { spring } from "@/lib/motion";
 import { useData } from "./DataProvider";
 import Footer from "./Footer";
 import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
 
-const NAV: { href: string; label: string; icon: typeof History; desktopOnly?: boolean }[] = [
+const NAV = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/billing", label: "Billing", icon: Receipt },
   { href: "/jobs", label: "Jobs", icon: Wrench },
-  { href: "/customers", label: "Customers", icon: Users },
-  { href: "/analytics", label: "Analytics", icon: BarChart3 },
-  { href: "/activity", label: "Activity", icon: History, desktopOnly: true },
   { href: "/settings", label: "Settings", icon: SettingsIcon },
 ];
 
@@ -130,15 +127,15 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           style={{ bottom: "calc(env(safe-area-inset-bottom) + 12px)" }}
           aria-label="Main"
         >
-          <div className="grid grid-cols-6">
-            {NAV.filter((n) => !n.desktopOnly).map(({ href, label, icon: Icon }) => {
+          <div className="grid grid-cols-4">
+            {NAV.map(({ href, label, icon: Icon }) => {
               const active = isActive(pathname, href);
               return (
                 <Link
                   key={href}
                   href={href}
                   aria-current={active ? "page" : undefined}
-                  className={`relative flex flex-col items-center gap-0.5 rounded-xl py-2 text-[9.5px] font-semibold transition-colors ${active ? "text-fg" : "text-subtle"}`}
+                  className={`relative flex flex-col items-center gap-0.5 rounded-xl py-2 text-[10px] font-semibold transition-colors ${active ? "text-fg" : "text-subtle"}`}
                 >
                   {active && (
                     <motion.span

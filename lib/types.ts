@@ -1,7 +1,6 @@
 export type DiscountType = "amount" | "percent";
 export type BillStatus = "paid" | "pending";
 export type PaperSize = "a4" | "t80" | "t58";
-export type PaymentMethod = "cash" | "upi";
 
 export interface BillItem {
   id: string;
@@ -22,9 +21,6 @@ export interface Bill {
   customerId?: string;
   jobId?: string;
   createdAt: string; // ISO timestamp
-  /** When the bill was settled (revenue is counted on this day). */
-  paidAt?: string;
-  paymentMethod?: PaymentMethod;
   customer: Customer;
   items: BillItem[];
   discountType: DiscountType;
@@ -65,19 +61,6 @@ export interface Contact extends Customer {
   id: string;
   notes: string;
   createdAt: string;
-}
-
-export type AuditKind = "created" | "generated" | "updated" | "deleted";
-export type AuditCategory = "bill" | "job" | "customer" | "settings" | "system";
-
-export interface AuditEntry {
-  id: string;
-  at: string; // ISO timestamp
-  kind: AuditKind;
-  category: AuditCategory;
-  summary: string;
-  /** e.g. "Android Mobile · Chrome", taken from the browser's user agent. */
-  device: string;
 }
 
 export interface ServicePreset {

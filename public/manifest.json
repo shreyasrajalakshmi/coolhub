@@ -56,17 +56,6 @@
           "sizes": "192x192"
         }
       ]
-    },
-    {
-      "name": "Customers",
-      "short_name": "Customers",
-      "url": "/customers",
-      "icons": [
-        {
-          "src": "/icons/icon-192.png",
-          "sizes": "192x192"
-        }
-      ]
     }
   ]
 }

@@ -2,13 +2,13 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { useRef, useState } from "react";
-import { AirVent, Car, ChevronDown, Eye, FileText, GripVertical, MessageCircle, Microwave, Pencil, Phone, Refrigerator, Trash2, WashingMachine, Wrench } from "lucide-react";
+import { AirVent, Car, ChevronDown, Eye, FileText, GripVertical, MessageCircle, Microwave, Pencil, Phone, Refrigerator, WashingMachine, Wrench } from "lucide-react";
 import type { Appliance } from "@/lib/types";
 import { buildJobUpdateText, formatDate, waLink } from "@/lib/format";
 import { softSpring } from "@/lib/motion";
 import type { Bill, Job, JobStatus } from "@/lib/types";
 import { useData } from "./DataProvider";
-import { AnchorButton, Button, JOB_STATUS, JobStatusBadge } from "./ui";
+import { AnchorButton, Button, DeleteButton, JOB_STATUS, JobStatusBadge } from "./ui";
 import { useUI } from "./UIProvider";
 
 type PointerLike = MouseEvent | TouchEvent | PointerEvent;
@@ -41,6 +41,25 @@ export default function JobCard({ job, bill, draggable = false, onDrag, onDragEn
   const meta = JOB_STATUS[job.status];
   const Icon = APPLIANCE_ICON[job.appliance] ?? Wrench;
 
+  const askDelete = async () => {
+    const ok = await confirm({
+      title: `Delete job ${job.number}?`,
+      message: (
+        <>
+          <p>
+            Are you sure you want to delete Job <span className="font-semibold text-fg">{job.number}</span>?
+          </p>
+          <p className="mt-1">
+            {job.customer.name} · {job.appliance} · {job.issue}
+          </p>
+          <p className="mt-1">{job.billId ? "Its invoice is kept, but the link to this job is removed. " : ""}This can&apos;t be undone.</p>
+        </>
+      ),
+      confirmLabel: "Delete job",
+    });
+    if (ok) await removeJob(job.id);
+  };
+
   return (
     <motion.div
       layout
@@ -63,11 +82,12 @@ export default function JobCard({ job, bill, draggable = false, onDrag, onDragEn
         open ? `border-line-strong ${meta.glow}` : "hover:border-line-strong"
       }`}
     >
+      <div className="flex items-start">
       <button
         type="button"
         onClick={() => !dragged.current && setOpen((o) => !o)}
         aria-expanded={open}
-        className="flex w-full items-start gap-3 p-4 text-left"
+        className="flex min-w-0 flex-1 items-start gap-3 p-4 pr-2 text-left"
       >
         <span className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${meta.badge}`}>
           <Icon size={20} />
@@ -89,6 +109,10 @@ export default function JobCard({ job, bill, draggable = false, onDrag, onDragEn
           <ChevronDown size={16} />
         </motion.span>
       </button>
+      <div className="p-3 pl-1">
+        <DeleteButton label={`Delete job ${job.number}`} onClick={askDelete} />
+      </div>
+      </div>
 
       <AnimatePresence initial={false}>
         {open && (
@@ -185,28 +209,6 @@ export default function JobCard({ job, bill, draggable = false, onDrag, onDragEn
                 )}
                 <Button onClick={() => openJob({ editing: job })} className="!px-3 !py-2" aria-label="Edit job">
                   <Pencil size={16} />
-                </Button>
-                <Button
-                  variant="danger"
-                  onClick={async () => {
-                    const ok = await confirm({
-                      title: `Delete job ${job.number}?`,
-                      message: (
-                        <>
-                          <p>
-                            <span className="font-semibold text-fg">{job.customer.name}</span> · {job.appliance} · {job.issue}
-                          </p>
-                          <p className="mt-1">{job.billId ? "Its invoice is kept, but the link to this job is removed. " : ""}This can&apos;t be undone.</p>
-                        </>
-                      ),
-                      confirmLabel: "Delete job",
-                    });
-                    if (ok) await removeJob(job.id);
-                  }}
-                  className="!px-3 !py-2"
-                  aria-label="Delete job"
-                >
-                  <Trash2 size={16} />
                 </Button>
               </div>
             </div>

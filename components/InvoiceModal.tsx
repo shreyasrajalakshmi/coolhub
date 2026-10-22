@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useData } from "./DataProvider";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Download, Loader2, Printer, Share2, X } from "lucide-react";
@@ -34,7 +33,6 @@ interface Props {
 }
 
 export default function InvoiceModal({ bill, settings, onClose }: Props) {
-  const { logAction } = useData();
   const [paper, setPaper] = useState<PaperSize>(settings.defaultPaper);
   const [heightMm, setHeightMm] = useState(200);
   const sheetRef = useRef<HTMLDivElement>(null);
@@ -73,15 +71,12 @@ export default function InvoiceModal({ bill, settings, onClose }: Props) {
     setNote("");
     try {
       const outcome = await shareInvoicePdf(await getFile(), bill, settings);
-      if (outcome === "shared") logAction("generated", "bill", `Bill ${bill.number} PDF shared via the share sheet · ${bill.customer.name}`);
       if (outcome === "downloaded") {
-        logAction("generated", "bill", `Bill ${bill.number} PDF downloaded and WhatsApp chat opened · ${bill.customer.name}`);
         setNote("PDF saved to this device and the customer's WhatsApp chat was opened. Attach the PDF there to send it.");
       }
     } catch {
       // PDF generation itself failed: still get the customer's chat open with the text summary.
       window.open(whatsappUrl(bill, settings), "_blank", "noopener");
-      logAction("generated", "bill", `Bill ${bill.number} summary opened in WhatsApp · ${bill.customer.name}`);
       setNote("Couldn't create the PDF, so the invoice summary was opened in WhatsApp instead.");
     } finally {
       setBusy(false);
@@ -92,7 +87,6 @@ export default function InvoiceModal({ bill, settings, onClose }: Props) {
     setBusy(true);
     try {
       downloadFile(await getFile());
-      logAction("generated", "bill", `Bill ${bill.number} PDF downloaded · ${bill.customer.name}`);
     } catch {
       setNote("Couldn't create the PDF. Use Print → Save as PDF instead.");
     } finally {
@@ -141,13 +135,7 @@ export default function InvoiceModal({ bill, settings, onClose }: Props) {
               {busy || pdf.state === "preparing" ? <Loader2 size={16} className="animate-spin" /> : <Share2 size={16} />}
               <span className="hidden sm:inline">Share via</span> WhatsApp
             </Button>
-            <Button
-              variant="primary"
-              onClick={() => {
-                logAction("generated", "bill", `Bill ${bill.number} printed · ${bill.customer.name}`);
-                window.print();
-              }}
-            >
+            <Button variant="primary" onClick={() => window.print()}>
               <Printer size={16} /> Print
             </Button>
           </div>
