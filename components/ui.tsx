@@ -77,7 +77,7 @@ export function DeleteButton({ label, onClick, className = "" }: { label: string
       whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.9 }}
       transition={spring}
-      className={`grid h-9 w-9 shrink-0 cursor-pointer place-items-center rounded-lg border border-red-500/30 bg-red-500/5 text-accent-fg transition-[box-shadow,background-color,border-color] hover:border-red-500/70 hover:bg-red-500/15 hover:shadow-[0_0_16px_rgba(239,68,68,0.55)] focus-visible:outline-2 focus-visible:outline-red-500 ${className}`}
+      className={`grid h-9 w-9 shrink-0 cursor-pointer place-items-center rounded-lg border border-danger-500/30 bg-danger-500/5 text-danger-fg transition-[box-shadow,background-color,border-color] hover:border-danger-500/70 hover:bg-danger-500/15 hover:shadow-[0_0_16px_rgba(239,68,68,0.55)] focus-visible:outline-2 focus-visible:outline-danger-500 ${className}`}
     >
       <Trash2 size={16} />
     </motion.button>
@@ -93,10 +93,10 @@ export const JOB_STATUS: Record<
   pending: {
     label: "Pending",
     column: "Pending",
-    text: "text-accent-fg",
-    dot: "bg-red-500",
-    badge: "border-red-500/40 bg-red-500/10 text-accent-fg",
-    active: "border-red-500/60 bg-red-500/15 text-accent-fg",
+    text: "text-danger-fg",
+    dot: "bg-danger-500",
+    badge: "border-danger-500/40 bg-danger-500/10 text-danger-fg",
+    active: "border-danger-500/60 bg-danger-500/15 text-danger-fg",
     glow: "",
     icon: Clock,
   },
@@ -158,7 +158,7 @@ export function BillStatusBadge({ status }: { status: BillStatus }) {
       <CheckCircle2 size={12} /> Paid
     </span>
   ) : (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-red-500/40 bg-red-500/10 px-2.5 py-1 text-xs font-semibold text-accent-fg">
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-danger-500/40 bg-danger-500/10 px-2.5 py-1 text-xs font-semibold text-danger-fg">
       <Clock size={12} /> Pending
     </span>
   );

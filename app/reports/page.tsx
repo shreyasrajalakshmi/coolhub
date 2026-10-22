@@ -9,21 +9,37 @@ import { BillStatusBadge, Button, EmptyState, PageHeader } from "@/components/ui
 import { formatDate, formatMoney, localDate } from "@/lib/format";
 import { rise, stagger } from "@/lib/motion";
 import { exportFile } from "@/lib/native";
-import { billsInRange, buildCsv, buildStatementPdf, periodLabel, RANGES, rangeBounds, summarize, type RangeId } from "@/lib/reports";
+import { cashFlow } from "@/lib/cashflow";
+import { billsInRange, buildCsv, buildExpenseCsv, buildExpensePdf, buildStatementPdf, periodLabel, RANGES, rangeBounds, summarize, type RangeId } from "@/lib/reports";
 
 export default function ReportsPage() {
-  const { bills, settings } = useData();
+  const { bills, expenses, settings } = useData();
   const todayStr = localDate(new Date());
   const [range, setRange] = useState<RangeId>("today");
   const [from, setFrom] = useState(todayStr);
   const [to, setTo] = useState(todayStr);
-  const [busy, setBusy] = useState<"pdf" | "csv" | null>(null);
+  const [busy, setBusy] = useState<"pdf" | "csv" | "epdf" | "ecsv" | null>(null);
   const [note, setNote] = useState("");
 
   const bounds = rangeBounds(range, from, to);
   const list = useMemo(() => billsInRange(bills, bounds), [bills, bounds[0], bounds[1]]); // eslint-disable-line react-hooks/exhaustive-deps
   const sum = summarize(list);
   const sorted = [...list].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+
+  const flow = useMemo(() => cashFlow(bills, expenses, bounds), [bills, expenses, bounds[0], bounds[1]]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const downloadExpenses = async (kind: "epdf" | "ecsv") => {
+    setBusy(kind);
+    setNote("");
+    try {
+      const file = kind === "epdf" ? await buildExpensePdf(bills, expenses, bounds, settings) : buildExpenseCsv(flow.expenses, bounds);
+      if (await exportFile(file, "Share expense report")) setNote(`${file.name} is ready.`);
+    } catch {
+      setNote("Couldn't create the expense report. Please try again.");
+    } finally {
+      setBusy(null);
+    }
+  };
 
   const download = async (kind: "pdf" | "csv") => {
     setBusy(kind);
@@ -100,6 +116,22 @@ export default function ReportsPage() {
           {busy === "csv" ? <Loader2 size={16} className="animate-spin" /> : <FileSpreadsheet size={16} />} Download CSV
         </Button>
       </div>
+      <section className="card space-y-3">
+        <div>
+          <h2 className="text-sm font-bold">Expense report</h2>
+          <p className="text-xs text-subtle">
+            {periodLabel(bounds)}: income {formatMoney(flow.income)} · expenses {formatMoney(flow.spent)} · {flow.net >= 0 ? "net profit" : "net loss"} {formatMoney(Math.abs(flow.net))}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          <Button variant="primary" onClick={() => downloadExpenses("epdf")} disabled={busy !== null || (flow.expenseCount === 0 && flow.incomeCount === 0)}>
+            {busy === "epdf" ? <Loader2 size={16} className="animate-spin" /> : <FileText size={16} />} Export Expense Report (PDF)
+          </Button>
+          <Button onClick={() => downloadExpenses("ecsv")} disabled={busy !== null || flow.expenseCount === 0}>
+            {busy === "ecsv" ? <Loader2 size={16} className="animate-spin" /> : <FileSpreadsheet size={16} />} Expense CSV
+          </Button>
+        </div>
+      </section>
       {note && <p role="status" className="text-xs text-subtle">{note}</p>}
 
       {sorted.length === 0 ? (

@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { BarChart3, LayoutDashboard, Lock, Receipt, Settings as SettingsIcon, Users, WifiOff, Wrench } from "lucide-react";
+import { BarChart3, LayoutDashboard, Lock, Receipt, Settings as SettingsIcon, Users, Wallet, WifiOff, Wrench } from "lucide-react";
 import { spring } from "@/lib/motion";
 import { useData } from "./DataProvider";
 import { useLock } from "./LockProvider";
@@ -13,12 +13,13 @@ import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
 
 const NAV = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/billing", label: "Billing", icon: Receipt },
-  { href: "/jobs", label: "Jobs", icon: Wrench },
-  { href: "/customers", label: "Customers", icon: Users },
-  { href: "/reports", label: "Reports", icon: BarChart3 },
-  { href: "/settings", label: "Settings", icon: SettingsIcon },
+  { href: "/", label: "Dashboard", short: "Home", icon: LayoutDashboard },
+  { href: "/billing", label: "Billing", short: "Billing", icon: Receipt },
+  { href: "/jobs", label: "Jobs", short: "Jobs", icon: Wrench },
+  { href: "/expenses", label: "Expenses", short: "Expenses", icon: Wallet },
+  { href: "/customers", label: "Customers", short: "Clients", icon: Users },
+  { href: "/reports", label: "Reports", short: "Reports", icon: BarChart3 },
+  { href: "/settings", label: "Settings", short: "Settings", icon: SettingsIcon },
 ];
 
 const isActive = (pathname: string, href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
@@ -56,7 +57,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <p className="truncate font-display text-lg font-bold leading-tight">
               {settings.shopName.split(" ")[0]} <span className="text-red-500">{settings.shopName.split(" ").slice(1).join(" ")}</span>
             </p>
-            <p className="truncate text-[11px] text-subtle" title={settings.services}>{settings.services}</p>
+            <p className="line-clamp-3 text-[10.5px] leading-snug text-subtle">{settings.services}</p>
           </div>
         </div>
 
@@ -108,9 +109,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <header className="no-print safe-top sticky top-0 z-30 border-b border-line bg-chrome-strong px-4 py-2.5 backdrop-blur-xl md:hidden">
           <div className="flex items-center gap-3">
             <Logo size={36} />
-            <p className="flex-1 truncate font-display text-lg font-bold">
-              {settings.shopName.split(" ")[0]} <span className="text-red-500">{settings.shopName.split(" ").slice(1).join(" ")}</span>
-            </p>
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-display text-lg font-bold leading-tight">
+                {settings.shopName.split(" ")[0]} <span className="text-red-500">{settings.shopName.split(" ").slice(1).join(" ")}</span>
+              </p>
+              <p className="line-clamp-2 text-[9.5px] leading-tight text-subtle">{settings.services}</p>
+            </div>
             {!online && <WifiOff size={18} className="text-accent-fg" aria-label="Offline" />}
             <ThemeToggle />
             {lockOn && (
@@ -141,15 +145,15 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           style={{ bottom: "calc(env(safe-area-inset-bottom) + 12px)" }}
           aria-label="Main"
         >
-          <div className="grid grid-cols-6">
-            {NAV.map(({ href, label, icon: Icon }) => {
+          <div className="grid grid-cols-7">
+            {NAV.map(({ href, short, icon: Icon }) => {
               const active = isActive(pathname, href);
               return (
                 <Link
                   key={href}
                   href={href}
                   aria-current={active ? "page" : undefined}
-                  className={`relative flex flex-col items-center gap-0.5 rounded-xl py-2 text-[9.5px] font-semibold transition-colors ${active ? "text-fg" : "text-subtle"}`}
+                  className={`relative flex flex-col items-center gap-0.5 rounded-xl py-2 text-[9px] font-semibold transition-colors ${active ? "text-fg" : "text-subtle"}`}
                 >
                   {active && (
                     <motion.span
@@ -161,7 +165,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   <motion.span className="relative" animate={{ y: active ? -1 : 0, scale: active ? 1.12 : 1 }} transition={spring}>
                     <Icon size={20} className={active ? "text-accent-fg" : ""} />
                   </motion.span>
-                  <span className="relative">{label}</span>
+                  <span className="relative">{short}</span>
                 </Link>
               );
             })}

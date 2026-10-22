@@ -5,13 +5,14 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { resolveContact } from "@/lib/customers";
 import { formatBillNumber, formatJobNumber } from "@/lib/format";
 import * as db from "@/lib/storage";
-import { DEFAULT_SETTINGS, type Bill, type BillStatus, type Contact, type Job, type JobStatus, type Settings } from "@/lib/types";
+import { DEFAULT_SETTINGS, type Bill, type BillStatus, type Contact, type Expense, type Job, type JobStatus, type Settings } from "@/lib/types";
 import Logo from "./Logo";
 
 export interface BackupData {
   bills: Bill[];
   jobs?: Job[];
   contacts?: Contact[];
+  expenses?: Expense[];
   settings?: Partial<Settings>;
 }
 
@@ -22,6 +23,7 @@ interface DataContextValue {
   jobs: Job[];
   /** Customers seen on bills and jobs; used for name / phone suggestions and Quick WhatsApp. */
   contacts: Contact[];
+  expenses: Expense[];
   storageError: boolean;
   nextBillNumber: () => string;
   nextJobNumber: () => string;
@@ -31,6 +33,8 @@ interface DataContextValue {
   saveJob: (job: Job, isNew: boolean) => Promise<Job>;
   removeJob: (id: string) => Promise<void>;
   setJobStatus: (job: Job, status: JobStatus) => Promise<void>;
+  saveExpense: (expense: Expense) => Promise<void>;
+  removeExpense: (id: string) => Promise<void>;
   importAll: (data: BackupData) => Promise<void>;
 }
 
@@ -53,6 +57,7 @@ export default function DataProvider({ children }: { children: React.ReactNode }
   const [bills, setBills] = useState<Bill[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
   const [storageError, setStorageError] = useState(false);
 
   // Latest values for callbacks that must not go stale between renders.
@@ -67,7 +72,7 @@ export default function DataProvider({ children }: { children: React.ReactNode }
 
   const reload = useCallback(async () => {
     try {
-      const [rawBills, rawJobs, rawContacts] = await Promise.all([db.getAllBills(), db.getAllJobs(), db.getAllContacts()]);
+      const [rawBills, rawJobs, rawContacts, rawExpenses] = await Promise.all([db.getAllBills(), db.getAllJobs(), db.getAllContacts(), db.getAllExpenses()]);
       let list = rawContacts;
       const dirtyContacts = new Map<string, Contact>();
       const dirtyBills: Bill[] = [];
@@ -102,10 +107,16 @@ export default function DataProvider({ children }: { children: React.ReactNode }
       setBills(billsOut);
       setJobs(jobsOut);
       setContacts(list.slice().sort((a, b) => a.name.localeCompare(b.name)));
+      setExpenses(rawExpenses);
     } catch {
       setStorageError(true);
     }
   }, []);
+
+  // The accent colour is a data attribute on <html>; CSS remaps the whole palette from it.
+  useEffect(() => {
+    document.documentElement.dataset.accent = settings.accent;
+  }, [settings.accent]);
 
   useEffect(() => {
     setSettings(db.loadSettings());
@@ -213,12 +224,31 @@ export default function DataProvider({ children }: { children: React.ReactNode }
     [guard, reload],
   );
 
+  const saveExpense = useCallback(
+    (expense: Expense) =>
+      guard(async () => {
+        await db.putExpense({ ...expense, updatedAt: new Date().toISOString() });
+        await reload();
+      }),
+    [guard, reload],
+  );
+
+  const removeExpense = useCallback(
+    (id: string) =>
+      guard(async () => {
+        await db.deleteExpense(id);
+        await reload();
+      }),
+    [guard, reload],
+  );
+
   const importAll = useCallback(
     (data: BackupData) =>
       guard(async () => {
         await db.putContacts(data.contacts ?? []);
         await db.putBills(data.bills);
         await db.putJobs(data.jobs ?? []);
+        await db.putExpenses(data.expenses ?? []);
         if (data.settings) {
           const s = data.settings;
           updateSettings({
@@ -239,6 +269,7 @@ export default function DataProvider({ children }: { children: React.ReactNode }
       bills,
       jobs,
       contacts,
+      expenses,
       storageError,
       nextBillNumber: () => formatBillNumber(settingsRef.current),
       nextJobNumber: () => formatJobNumber(settingsRef.current),
@@ -248,9 +279,11 @@ export default function DataProvider({ children }: { children: React.ReactNode }
       saveJob,
       removeJob,
       setJobStatus,
+      saveExpense,
+      removeExpense,
       importAll,
     }),
-    [settings, updateSettings, bills, jobs, contacts, storageError, saveBill, removeBill, setBillStatus, saveJob, removeJob, setJobStatus, importAll],
+    [settings, updateSettings, bills, jobs, contacts, expenses, storageError, saveBill, removeBill, setBillStatus, saveJob, removeJob, setJobStatus, saveExpense, removeExpense, importAll],
   );
 
   if (!ready) {

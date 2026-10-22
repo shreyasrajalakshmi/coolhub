@@ -33,9 +33,17 @@
   --color-chrome-strong: rgb(10 10 10 / 0.65);
   --color-chrome-solid: rgb(10 10 10 / 0.82);
   --color-pop: #17171a;
+
+  /* Fixed warning red for delete / pending / error states; it never follows the accent colour. */
+  --color-danger-400: #f87171;
+  --color-danger-500: #ef4444;
+  --color-danger-600: #dc2626;
+  --color-danger-fg: #f87171;
 }
 
 :root {
+  --accent: #dc2626;
+  --accent-rgb: 220 38 38;
   --grid: rgb(255 255 255 / 0.035);
   --wm: rgb(255 255 255 / 0.036);
   --card-shadow: none;
@@ -62,6 +70,7 @@
   --color-ok-fg: #047857;
   --color-warn-fg: #b45309;
   --color-info-fg: #0369a1;
+  --color-danger-fg: #b91c1c;
   --color-overlay: rgb(15 23 42 / 0.5);
   --grid: rgb(15 23 42 / 0.05);
   --wm: rgb(15 23 42 / 0.035);
@@ -107,7 +116,7 @@
 }
 
 @utility btn-danger {
-  @apply btn border border-red-500/35 bg-transparent text-accent-fg hover:bg-red-500/10;
+  @apply btn border border-danger-500/35 bg-transparent text-danger-fg hover:bg-danger-500/10;
 }
 
 /* ---------- Surfaces ---------- */
@@ -133,7 +142,7 @@ option {
 }
 
 ::selection {
-  background: rgb(239 68 68 / 0.35);
+  background: rgb(var(--accent-rgb) / 0.35);
 }
 
 * {
@@ -252,4 +261,186 @@ option {
     margin: 0 !important;
     border-radius: 0 !important;
   }
+}
+
+:root,
+:root[data-accent="crimson"] {
+  /* Default accent: exactly #dc2626 at 600 (Tailwind v4's own red-600 is a different shade). */
+  --color-red-50: #fef2f2;
+  --color-red-100: #fee2e2;
+  --color-red-200: #fecaca;
+  --color-red-300: #fca5a5;
+  --color-red-400: #f87171;
+  --color-red-500: #ef4444;
+  --color-red-600: #dc2626;
+  --color-red-700: #b91c1c;
+  --color-red-800: #991b1b;
+  --color-red-900: #7f1d1d;
+  --color-red-950: #450a0a;
+}
+
+/* ---------- Accent colours: the red palette is remapped, so every accent, glow and the invoice follow the choice ---------- */
+:root[data-accent="blue"] {
+  --accent: #2563eb;
+  --accent-rgb: 37 99 235;
+  --color-accent-fg: #60a5fa;
+  --color-red-50: #eff6ff;
+  --color-red-100: #dbeafe;
+  --color-red-200: #bfdbfe;
+  --color-red-300: #93c5fd;
+  --color-red-400: #60a5fa;
+  --color-red-500: #3b82f6;
+  --color-red-600: #2563eb;
+  --color-red-700: #1d4ed8;
+  --color-red-800: #1e40af;
+  --color-red-900: #1e3a8a;
+  --color-red-950: #172554;
+}
+:root[data-theme="light"][data-accent="blue"] {
+  --color-accent-fg: #1d4ed8;
+}
+:root[data-accent="emerald"] {
+  --accent: #059669;
+  --accent-rgb: 5 150 105;
+  --color-accent-fg: #34d399;
+  --color-red-50: #ecfdf5;
+  --color-red-100: #d1fae5;
+  --color-red-200: #a7f3d0;
+  --color-red-300: #6ee7b7;
+  --color-red-400: #34d399;
+  --color-red-500: #10b981;
+  --color-red-600: #059669;
+  --color-red-700: #047857;
+  --color-red-800: #065f46;
+  --color-red-900: #064e3b;
+  --color-red-950: #022c22;
+}
+:root[data-theme="light"][data-accent="emerald"] {
+  --color-accent-fg: #047857;
+}
+:root[data-accent="cyan"] {
+  --accent: #0891b2;
+  --accent-rgb: 8 145 178;
+  --color-accent-fg: #22d3ee;
+  --color-red-50: #ecfeff;
+  --color-red-100: #cffafe;
+  --color-red-200: #a5f3fc;
+  --color-red-300: #67e8f9;
+  --color-red-400: #22d3ee;
+  --color-red-500: #06b6d4;
+  --color-red-600: #0891b2;
+  --color-red-700: #0e7490;
+  --color-red-800: #155e75;
+  --color-red-900: #164e63;
+  --color-red-950: #083344;
+}
+:root[data-theme="light"][data-accent="cyan"] {
+  --color-accent-fg: #0e7490;
+}
+:root[data-accent="orange"] {
+  --accent: #ea580c;
+  --accent-rgb: 234 88 12;
+  --color-accent-fg: #fb923c;
+  --color-red-50: #fff7ed;
+  --color-red-100: #ffedd5;
+  --color-red-200: #fed7aa;
+  --color-red-300: #fdba74;
+  --color-red-400: #fb923c;
+  --color-red-500: #f97316;
+  --color-red-600: #ea580c;
+  --color-red-700: #c2410c;
+  --color-red-800: #9a3412;
+  --color-red-900: #7c2d12;
+  --color-red-950: #431407;
+}
+:root[data-theme="light"][data-accent="orange"] {
+  --color-accent-fg: #c2410c;
+}
+:root[data-accent="violet"] {
+  --accent: #7c3aed;
+  --accent-rgb: 124 58 237;
+  --color-accent-fg: #a78bfa;
+  --color-red-50: #f5f3ff;
+  --color-red-100: #ede9fe;
+  --color-red-200: #ddd6fe;
+  --color-red-300: #c4b5fd;
+  --color-red-400: #a78bfa;
+  --color-red-500: #8b5cf6;
+  --color-red-600: #7c3aed;
+  --color-red-700: #6d28d9;
+  --color-red-800: #5b21b6;
+  --color-red-900: #4c1d95;
+  --color-red-950: #2e1065;
+}
+:root[data-theme="light"][data-accent="violet"] {
+  --color-accent-fg: #6d28d9;
+}
+
+/* Splash emblem layers: frozen (icy-blue crystalline) and the final accent glow */
+.ice-layer {
+  background: linear-gradient(120deg, #eafaff 0%, #8fd3ff 28%, #2f8cff 52%, #b9e8ff 74%, #f2fcff 100%);
+  background-size: 220% 220%;
+  animation: ice-shimmer 1.6s linear infinite, ice-glow 1.1s ease-in-out infinite;
+}
+.accent-layer {
+  background: var(--accent);
+  animation: emblem-glow 2.2s ease-in-out infinite;
+}
+@keyframes ice-shimmer {
+  from { background-position: 0% 0%; }
+  to { background-position: 100% 100%; }
+}
+@keyframes ice-glow {
+  0%, 100% { filter: drop-shadow(0 0 8px rgba(120, 200, 255, 0.7)); }
+  50% { filter: drop-shadow(0 0 24px rgba(160, 225, 255, 1)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ice-layer { animation: none; }
+}
+
+/* Splash emblem glow (CSS so it can use the accent variable) */
+@keyframes splash-glow {
+  0%, 50%, 100% { filter: drop-shadow(0 0 6px rgb(var(--accent-rgb) / 0.5)); }
+  25%, 75% { filter: drop-shadow(0 0 30px rgb(var(--accent-rgb) / 1)); }
+}
+.splash-glow {
+  animation: splash-glow 4s ease-in-out both;
+}
+@keyframes emblem-glow {
+  0%, 100% { filter: drop-shadow(0 0 10px rgb(var(--accent-rgb) / 0.55)); }
+  50% { filter: drop-shadow(0 0 26px rgb(var(--accent-rgb) / 0.95)); }
+}
+.emblem-glow {
+  animation: emblem-glow 3.2s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .splash-glow, .emblem-glow { animation: none; }
+}
+
+/* ---------- Appliance card art: loops stay paused until the card is hovered or selected ---------- */
+.ap-anim {
+  animation-play-state: paused;
+  transform-box: fill-box;
+}
+.group:hover .ap-anim,
+button[data-active="true"] .ap-anim {
+  animation-play-state: running;
+}
+.ap-flow { animation: ap-flow 1.1s linear infinite; }
+.ap-pulse { animation: ap-pulse 1.4s ease-in-out infinite; }
+.ap-glow { animation: ap-glow 1.8s ease-in-out infinite; }
+.ap-spin { animation: ap-spin 2.2s linear infinite; }
+.ap-spin-slow { animation: ap-spin 9s linear infinite; }
+.ap-bubble { animation: ap-bubble 1.6s ease-in infinite; }
+.ap-wave { animation: ap-wave 1.6s linear infinite; }
+.ap-sheen { animation: ap-sheen 2.2s ease-in-out infinite; }
+@keyframes ap-flow { to { stroke-dashoffset: -32; } }
+@keyframes ap-pulse { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; } }
+@keyframes ap-glow { 0%, 100% { opacity: 0.8; } 50% { opacity: 1; } }
+@keyframes ap-spin { to { transform: rotate(360deg); } }
+@keyframes ap-bubble { 0% { transform: translateY(5px); opacity: 0; } 25% { opacity: 0.9; } 100% { transform: translateY(-9px); opacity: 0; } }
+@keyframes ap-wave { from { transform: translateX(0); } to { transform: translateX(-8px); } }
+@keyframes ap-sheen { 0% { transform: translateX(0); } 60%, 100% { transform: translateX(120px); } }
+@media (prefers-reduced-motion: reduce) {
+  .ap-anim { animation: none !important; }
 }

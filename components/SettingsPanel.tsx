@@ -2,26 +2,27 @@
 
 import { motion } from "framer-motion";
 import { useRef, useState } from "react";
-import { Download, Plus, RotateCcw, Trash2, Upload } from "lucide-react";
+import { Check, Download, Plus, RotateCcw, Trash2, Upload } from "lucide-react";
+import { ACCENTS } from "@/lib/accent";
 import { exportFile } from "@/lib/native";
-import { DEFAULT_PRESETS, type Bill, type Contact, type Job, type PaperSize, type Settings } from "@/lib/types";
+import { DEFAULT_PRESETS, type Bill, type Contact, type Expense, type Job, type PaperSize, type Settings } from "@/lib/types";
 import { useData } from "./DataProvider";
 import InstallButton from "./InstallButton";
 import SecuritySettings from "./SecuritySettings";
 import { useInstall } from "./InstallProvider";
-import { Button, PageHeader } from "./ui";
+import { Button, PageHeader, Switch } from "./ui";
 import { rise, stagger } from "@/lib/motion";
 
 export default function SettingsPanel() {
-  const { settings, updateSettings: onChange, bills, jobs, contacts, importAll } = useData();
+  const { settings, updateSettings: onChange, bills, jobs, contacts, expenses, importAll } = useData();
   const fileRef = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState("");
   const { available: canInstall } = useInstall();
 
   const exportBackup = async () => {
-    const file = new File([JSON.stringify({ app: "coolhub", version: 5, settings, bills, jobs, contacts }, null, 2)], `coolhub-backup-${new Date().toISOString().slice(0, 10)}.json`, { type: "application/json" });
+    const file = new File([JSON.stringify({ app: "coolhub", version: 6, settings, bills, jobs, contacts, expenses }, null, 2)], `coolhub-backup-${new Date().toISOString().slice(0, 10)}.json`, { type: "application/json" });
     await exportFile(file, "Save backup");
-    setMessage(`Backup ready: ${bills.length} bills, ${jobs.length} jobs, ${contacts.length} customers.`);
+    setMessage(`Backup ready: ${bills.length} bills, ${jobs.length} jobs, ${contacts.length} customers, ${expenses.length} expenses.`);
   };
 
   const importBackup = async (file: File) => {
@@ -30,9 +31,10 @@ export default function SettingsPanel() {
       if (!Array.isArray(data.bills)) throw new Error("bad file");
       const valid = (data.bills as Bill[]).filter((b) => b && b.id && b.number && Array.isArray(b.items));
       const validJobs = ((data.jobs ?? []) as Job[]).filter((j) => j && j.id && j.number && j.customer);
+      const validExpenses = ((data.expenses ?? []) as Expense[]).filter((x) => x && x.id && typeof x.amount === "number" && x.date);
       const validContacts = ((data.contacts ?? []) as Contact[]).filter((c) => c && c.id && c.name);
-      await importAll({ bills: valid, jobs: validJobs, contacts: validContacts, settings: data.settings });
-      setMessage(`Restored ${valid.length} bills, ${validJobs.length} jobs and ${validContacts.length} customers.`);
+      await importAll({ bills: valid, jobs: validJobs, contacts: validContacts, expenses: validExpenses, settings: data.settings });
+      setMessage(`Restored ${valid.length} bills, ${validJobs.length} jobs, ${validContacts.length} customers and ${validExpenses.length} expenses.`);
     } catch {
       setMessage("That file isn't a valid Cool Hub backup.");
     }
@@ -48,6 +50,35 @@ export default function SettingsPanel() {
   return (
     <motion.div variants={stagger} initial="hidden" animate="show" className="mx-auto max-w-2xl space-y-4">
       <PageHeader title="Shop Settings" subtitle="Shown on invoices and used across the app" />
+
+      <motion.section variants={rise} className="card space-y-3">
+        <h3 className="text-xs font-bold uppercase tracking-[0.18em] text-accent-fg">Theme Color</h3>
+        <p className="text-xs text-subtle">Changes the app accents and the colour of invoices, the PAID seal and statements.</p>
+        <div role="radiogroup" aria-label="Theme color" className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+          {ACCENTS.map((a) => {
+            const on = settings.accent === a.id;
+            return (
+              <motion.button
+                key={a.id}
+                type="button"
+                role="radio"
+                aria-checked={on}
+                aria-label={a.label}
+                onClick={() => onChange({ accent: a.id })}
+                whileHover={{ y: -2 }}
+                whileTap={{ scale: 0.94 }}
+                className={`flex cursor-pointer flex-col items-center gap-1.5 rounded-xl border px-1 py-2.5 text-[11px] font-semibold transition-colors ${on ? "border-fg/40 bg-surface-3 text-fg" : "border-line text-subtle hover:text-fg2"}`}
+              >
+                <span className="grid h-9 w-9 place-items-center rounded-full text-white shadow-md" style={{ background: a.hex, boxShadow: on ? `0 0 14px ${a.hex}` : undefined }}>
+                  {on && <Check size={18} strokeWidth={3} />}
+                </span>
+                <span className="text-center leading-tight">{a.label}</span>
+              </motion.button>
+            );
+          })}
+        </div>
+        <Switch checked={settings.splashSound} onChange={(v) => onChange({ splashSound: v })} label="Splash sound effects" description="Airflow whoosh and ice-crack sounds during the 4-second intro" />
+      </motion.section>
 
       <motion.section variants={rise} className="card space-y-3">
         <h3 className="text-xs font-bold uppercase tracking-[0.18em] text-accent-fg">Shop Details</h3>

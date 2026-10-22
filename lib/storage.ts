@@ -1,12 +1,12 @@
-import type { Bill, Contact, Job, Settings } from "./types";
+import type { Bill, Contact, Expense, Job, Settings } from "./types";
 import { DEFAULT_SETTINGS, OFFICIAL_PROFILE, PROFILE_VERSION } from "./types";
 
 const DB_NAME = "coolhub-billbook";
-const DB_VERSION = 5; // v5 drops the retired audit-log store
+const DB_VERSION = 6; // v6 adds the expenses store
 const SETTINGS_KEY = "coolhub-settings";
 
-type StoreName = "bills" | "jobs" | "contacts";
-const STORES: StoreName[] = ["bills", "jobs", "contacts"];
+type StoreName = "bills" | "jobs" | "contacts" | "expenses";
+const STORES: StoreName[] = ["bills", "jobs", "contacts", "expenses"];
 
 function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -71,6 +71,11 @@ export const putContacts = (c: Contact[]) => putMany("contacts", c);
 
 const OLD_DEFAULT_TERMS =
   "1. 30-day service warranty on repair work; parts carry the manufacturer's warranty.\n2. Warranty is void on physical damage, water damage or tampering.\n3. Payment is due on completion of service.";
+
+export const getAllExpenses = async () => (await getAll<Expense>("expenses")).sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt));
+export const putExpense = (e: Expense) => put("expenses", e);
+export const putExpenses = (e: Expense[]) => putMany("expenses", e);
+export const deleteExpense = (id: string) => remove("expenses", id);
 
 export function loadSettings(): Settings {
   try {

@@ -1,5 +1,6 @@
 import type { Bill, PaperSize, Settings } from "@/lib/types";
 import { formatDate, formatDateTime, formatMoney } from "@/lib/format";
+import { accentHex } from "@/lib/accent";
 import PaidSeal from "./PaidSeal";
 
 interface Props {
@@ -149,7 +150,7 @@ function A4Invoice({ bill, settings, sealed }: { bill: Bill; settings: Settings;
         <div className="relative w-44 shrink-0 text-center" style={sealed ? { height: 156 } : undefined}>
           {sealed && (
             <div className="absolute" style={{ left: 22, top: 0, width: 128, height: 128 }}>
-              <PaidSeal date={sealDate(bill)} size={128} />
+              <PaidSeal date={sealDate(bill)} size={128} color={accentHex()} />
             </div>
           )}
           <div className={sealed ? "absolute inset-x-0 bottom-0" : ""}>
@@ -230,7 +231,7 @@ function ThermalInvoice({
       </div>
       {sealed ? (
         <div className="mt-2 flex justify-center">
-          <PaidSeal date={sealDate(bill)} size={paper === "t58" ? 96 : 116} bold />
+          <PaidSeal date={sealDate(bill)} size={paper === "t58" ? 96 : 116} bold color={accentHex()} />
         </div>
       ) : (
         <p className="mt-1 text-center font-bold uppercase">{bill.status === "paid" ? "*** PAID ***" : "Payment Pending"}</p>

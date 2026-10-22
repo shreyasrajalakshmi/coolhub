@@ -1,9 +1,9 @@
 # Cool Hub
 
-Offline-first PWA for **Cool Hub** – Car A/C Fitting, Fridge, Washing Machine, Oven Repairing & Service, Secondhand Sale.
+Offline-first PWA for **Cool Hub** – Car AC, AC Fitting, Fridge, Washing Machine, Oven Repairing & Services, Secondhand Sale.
 Billing, service jobs and shop settings in a black-and-red (or light) interface.
 Next.js (App Router) · Tailwind CSS v4 · Framer Motion · TypeScript · lucide-react.
-There is no login and no backend: the app opens straight on the dashboard, and data lives in IndexedDB (bills, jobs and remembered customer names) and localStorage (settings, theme).
+There is no login and no backend: the app opens straight on the dashboard, and data lives in IndexedDB (bills, jobs, expenses and remembered customer names) and localStorage (settings, theme).
 
 ## Run
 
@@ -31,13 +31,31 @@ On iPhone / iPad it opens the two-step guide: Share → *Add to Home Screen*.
 | `/` Overview | KPIs, activity ticker, quick actions, recent jobs & invoices, **Install** button (browser only) |
 | `/billing` | Bill history: search by name / phone / bill no.; filter by date, Paid / Pending and appliance; each card has **View / Print**, **Share on WhatsApp (PDF)**, **Edit**, **Delete**; the customer name opens their ledger |
 | `/jobs` | Kanban board / list, **Convert to Invoice**, delete |
+| `/expenses` | **Expenses & Cash Flow**: add / edit / delete expenses (amount, category, description, date, Cash / UPI); Daily / Weekly / Monthly totals: income (paid bills) − expenses = net profit |
 | `/customers` | Customer list (search by name or phone) → **ledger**: every bill and job, appliances serviced, total spent, pending dues |
-| `/reports` | Today / This Week / This Month / Custom Date summary with **PDF statement** and **CSV** download |
-| `/settings` | Shop profile, service presets, **PIN lock**, theme, backup / restore |
+| `/reports` | Today / This Week / This Month / Custom Date summary with **PDF statement** and **CSV** download, plus **Export Expense Report** (PDF / CSV) |
+| `/settings` | **Theme Color** (6 presets), shop profile, service presets, **PIN lock**, theme, backup / restore (includes expenses) |
+
+## Theme color
+
+Settings → **Theme Color** offers Crimson Red (default, exactly `#dc2626`), Deep Blue, Emerald Green, Neon Cyan, Amber Orange and Dark Violet.
+The choice recolours the whole app and the invoice (header rule, table header, title, PAID seal), statements and PDFs; it is saved on the device and in backups.
+Delete buttons and "pending" badges stay warning-red whatever the accent.
+
+## New bill: appliance cards
+
+The bill form opens with large glass cards (AC / Fridge / Car AC / Oven / Washer / Others), each with its own illustrated, animated artwork (`components/ApplianceArt.tsx`): airflow waves, frosted fridge, sports car with breeze lines, glowing oven grill, spinning washer drum, gear-and-wrench toolkit. Tapping adds a shine streak, ripple and haptic tick; the selected card glows in the accent colour with a check badge. Choosing one shows quick tags for typical jobs
+(for example AC: *AC Gas Charging*, *Capacitor Replacement*, *Leak Testing*…); tapping a tag fills the description you are editing or appends to it. *Others* keeps free typing.
+
+## Launch splash
+
+A 4.0-second cinematic intro: airflow mist blows in (0–1.2 s) → the emblem emerges and freezes into icy-blue crystal (1.2–2.4 s) → frost cracks branch across it, the ice shatters into drifting frost and the logo returns in the accent glow (2.4–3.2 s) → the services line fades in (3.2–4.0 s).
+Visuals are one canvas + Framer Motion (no assets). Sound is synthesised live with the Web Audio API (airflow whoosh, ice crack, glass shatter); if the browser or Android WebView blocks autoplay it stays silent and joins in on the first tap, never throwing. Mute it with the speaker icon on the splash or under Settings → Theme Color.
 
 ## Launch & PIN lock
 
-On every launch a 4-second black splash (glowing crimson emblem, "Created by Shreyas") plays, then the PIN screen (or first-run PIN setup).
+On every launch a 4-second black splash (glowing accent-coloured emblem, "Created by Shreyas") plays, then the PIN screen (or first-run PIN setup).
+The lock screen is an AC / refrigeration scene: drifting frost vapour and airflow streams, a snowflake-and-louver emblem, and a frosted-glass keypad with haptic feedback (native haptics in the Android app).
 - First run: create a 4-digit PIN and (recommended) a recovery question; or skip to run without a lock.
 - **Lock now** is in the header; the app also re-locks after a minute in the background. Five wrong PINs pause entry for 30 s.
 - **Forgot PIN?** → answer the recovery question → choose a new PIN. Change the PIN, the question, or turn the lock off in **Settings → Security**.

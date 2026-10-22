@@ -54,7 +54,7 @@ interface Props {
  * Round "PAID" rubber stamp: double ring, ★ COOL HUB ★ on the top arc, bold PAID and the payment date in the middle.
  * The tilt is part of the SVG (not CSS) because the print stylesheet removes CSS transforms.
  */
-export default function PaidSeal({ date, size, color = "#dc2626", bold = false }: Props) {
+export default function PaidSeal({ date, size, color = "#dc2626" /* callers pass the live accent */, bold = false }: Props) {
   const uid = useId().replace(/:/g, "");
   const arc = `${uid}-arc`;
   const mask = `${uid}-wear`;

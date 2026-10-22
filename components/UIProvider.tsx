@@ -4,13 +4,14 @@ import { AnimatePresence } from "framer-motion";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { createContext, Suspense, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Trash2 } from "lucide-react";
-import type { Bill, Contact, Job } from "@/lib/types";
+import type { Bill, Contact, Expense, Job } from "@/lib/types";
 import BillForm from "./BillForm";
 import { useData } from "./DataProvider";
 import Drawer from "./Drawer";
 import InvoiceModal from "./InvoiceModal";
 import JobForm from "./JobForm";
 import CustomerLedger from "./CustomerLedger";
+import ExpenseForm from "./ExpenseForm";
 import QuickWhatsApp from "./QuickWhatsApp";
 import { Button } from "./ui";
 
@@ -31,6 +32,8 @@ interface UIContextValue {
   openWhatsApp: (contact?: Contact | null) => void;
   /** Opens a customer's history: every bill, appliance serviced, total spent and pending dues. */
   openLedger: (contactId: string) => void;
+  /** Add an expense, or edit an existing one. */
+  openExpense: (editing?: Expense | null) => void;
   /** Styled yes/no prompt; resolves true only if the user confirms. */
   confirm: (opts: ConfirmOptions) => Promise<boolean>;
 }
@@ -75,6 +78,7 @@ export default function UIProvider({ children }: { children: React.ReactNode }) 
   const [billDraft, setBillDraft] = useState<BillDraft | null>(null);
   const [jobDraft, setJobDraft] = useState<JobDraft | null>(null);
   const [invoice, setInvoice] = useState<Bill | null>(null);
+  const [expenseDraft, setExpenseDraft] = useState<{ editing: Expense | null } | null>(null);
   const [ledgerId, setLedgerId] = useState<string | null>(null);
   const [whatsapp, setWhatsapp] = useState<{ contact: Contact | null } | null>(null);
   const [asking, setAsking] = useState<{ opts: ConfirmOptions; resolve: (ok: boolean) => void } | null>(null);
@@ -84,6 +88,7 @@ export default function UIProvider({ children }: { children: React.ReactNode }) 
   const viewInvoice = useCallback((b: Bill) => setInvoice(b), []);
   const openWhatsApp = useCallback((c: Contact | null = null) => setWhatsapp({ contact: c }), []);
 
+  const openExpense = useCallback((editing: Expense | null = null) => setExpenseDraft({ editing }), []);
   const openLedger = useCallback((id: string) => setLedgerId(id), []);
   const confirm = useCallback((opts: ConfirmOptions) => new Promise<boolean>((resolve) => setAsking({ opts, resolve })), []);
   const answer = (ok: boolean) => {
@@ -91,8 +96,8 @@ export default function UIProvider({ children }: { children: React.ReactNode }) 
     setAsking(null);
   };
   const value = useMemo(
-    () => ({ openBill, openJob, viewInvoice, openWhatsApp, openLedger, confirm }),
-    [openBill, openJob, viewInvoice, openWhatsApp, openLedger, confirm],
+    () => ({ openBill, openJob, viewInvoice, openWhatsApp, openLedger, openExpense, confirm }),
+    [openBill, openJob, viewInvoice, openWhatsApp, openLedger, openExpense, confirm],
   );
 
   const closeBill = useCallback(() => setBillDraft(null), []);
@@ -131,6 +136,11 @@ export default function UIProvider({ children }: { children: React.ReactNode }) 
           </Drawer>
         )}
         {whatsapp && <QuickWhatsApp key="wa" initialContact={whatsapp.contact} onClose={() => setWhatsapp(null)} />}
+        {expenseDraft && (
+          <Drawer key="expense" title={expenseDraft.editing ? "Edit Expense" : "Add Expense"} subtitle="Money spent on the shop" onClose={() => setExpenseDraft(null)}>
+            <ExpenseForm editing={expenseDraft.editing} onSaved={() => setExpenseDraft(null)} onCancel={() => setExpenseDraft(null)} />
+          </Drawer>
+        )}
         {ledgerId && <CustomerLedger key="ledger" contactId={ledgerId} onClose={() => setLedgerId(null)} />}
         {asking && (
           <Drawer key="confirm" title={asking.opts.title} onClose={() => answer(false)} variant="dialog">

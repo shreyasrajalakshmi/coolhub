@@ -67,6 +67,23 @@ export interface Contact extends Customer {
   createdAt: string;
 }
 
+export type ExpenseCategory = "Spare Parts" | "Gas/Refrigerant" | "Fuel/Travel" | "Tools" | "Tea/Food" | "Shop Rent/Bills" | "Misc";
+export const EXPENSE_CATEGORIES: ExpenseCategory[] = ["Spare Parts", "Gas/Refrigerant", "Fuel/Travel", "Tools", "Tea/Food", "Shop Rent/Bills", "Misc"];
+export type PayMode = "cash" | "upi";
+
+export interface Expense {
+  id: string;
+  date: string; // YYYY-MM-DD, the day the money was spent
+  amount: number;
+  category: ExpenseCategory;
+  description: string;
+  mode: PayMode;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type AccentId = "crimson" | "blue" | "emerald" | "cyan" | "orange" | "violet";
+
 export interface ServicePreset {
   name: string;
   /** Optional default unit price – left blank unless the shop sets one. */
@@ -95,15 +112,19 @@ export interface Settings {
   nextJobNumber: number;
   defaultPaper: PaperSize;
   servicePresets: ServicePreset[];
+  /** App + invoice accent colour. */
+  accent: AccentId;
+  /** Play the synthesised sound effects during the launch splash. */
+  splashSound: boolean;
 }
 
-export const PROFILE_VERSION = 2;
+export const PROFILE_VERSION = 3;
 
 export const OFFICIAL_PROFILE = {
   profileVersion: PROFILE_VERSION,
   shopName: "Cool Hub",
   tagline: "If you have doubts about this work, we will never let you down",
-  services: "Car A/C Fitting, Fridge, Washing Machine, Oven Repairing & Service, Secondhand Sale",
+  services: "Car AC, AC Fitting, Fridge, Washing Machine, Oven Repairing & Services, Secondhand Sale",
   phone: "9645128949, 8089785214",
   email: "coolhub4914@gmail.com",
   address: "KSEB Building, Pattambi Road, Pengattiri",
@@ -147,6 +168,8 @@ export const DEFAULT_SETTINGS: Settings = {
   nextJobNumber: 1,
   defaultPaper: "a4",
   servicePresets: DEFAULT_PRESETS,
+  accent: "crimson",
+  splashSound: true,
 };
 
 export const QUICK_ISSUES = [

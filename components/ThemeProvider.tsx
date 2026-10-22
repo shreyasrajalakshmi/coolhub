@@ -19,7 +19,7 @@ export function useTheme(): ThemeValue {
 }
 
 /** Script run before first paint (see layout.tsx) so a saved light theme never flashes dark. */
-export const THEME_INIT_SCRIPT = `try{var t=localStorage.getItem("${KEY}");document.documentElement.dataset.theme=t==="light"?"light":"dark"}catch(e){document.documentElement.dataset.theme="dark"}`;
+export const THEME_INIT_SCRIPT = `try{var t=localStorage.getItem("${KEY}");document.documentElement.dataset.theme=t==="light"?"light":"dark"}catch(e){document.documentElement.dataset.theme="dark"}try{var a=JSON.parse(localStorage.getItem("coolhub-settings")||"{}").accent;if(a)document.documentElement.dataset.accent=a}catch(e){}`;
 
 export default function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>("dark");

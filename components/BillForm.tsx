@@ -6,8 +6,9 @@ import { Plus, Save, Trash2, Zap } from "lucide-react";
 import { computeTotals, lineTotal } from "@/lib/calc";
 import { formatMoney, newId } from "@/lib/format";
 import { softSpring } from "@/lib/motion";
-import { APPLIANCES, type Appliance, type Bill, type BillStatus, type Contact, type DiscountType, type Job, type ServicePreset } from "@/lib/types";
+import { type Appliance, type Bill, type BillStatus, type Contact, type DiscountType, type Job, type ServicePreset } from "@/lib/types";
 import AnimatedNumber from "./AnimatedNumber";
+import ApplianceCards, { APPLIANCE_CARDS } from "./ApplianceCards";
 import CustomerFields from "./CustomerFields";
 import { useData } from "./DataProvider";
 import { Button, Switch } from "./ui";
@@ -51,6 +52,7 @@ export default function BillForm({ editing = null, job = null, contact = null, o
   const [notes, setNotes] = useState(editing?.notes ?? (job && job.notes ? `Job ${job.number}: ${job.notes}` : ""));
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [activeRow, setActiveRow] = useState<string | null>(null); // the description box the tags write into
 
   const totals = useMemo(
     () => computeTotals(items.map((i) => ({ qty: num(i.qty), price: num(i.price) })), discountType, num(discountValue), num(taxRate)),
@@ -67,6 +69,15 @@ export default function BillForm({ editing = null, job = null, contact = null, o
       return [...list, blankItem(preset.name, price)];
     });
   };
+
+  const tags = APPLIANCE_CARDS.find((c) => c.appliance === appliance)?.tags ?? [];
+
+  /** Fill the description you're typing in, or append to it if it already has text. */
+  const applyTag = (tag: string) =>
+    setItems((list) => {
+      const targetId = list.some((i) => i.id === activeRow) ? activeRow : list[list.length - 1].id;
+      return list.map((i) => (i.id === targetId ? { ...i, description: i.description.trim() ? `${i.description.trim().replace(/,$/, "")}, ${tag}` : tag } : i));
+    });
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,14 +133,30 @@ export default function BillForm({ editing = null, job = null, contact = null, o
       <div className="space-y-3">
         <h3 className="text-xs font-bold uppercase tracking-[0.18em] text-subtle">Services &amp; Parts</h3>
         <div>
-          <label className="label" htmlFor="bill-appliance">Appliance serviced (optional)</label>
-          <select id="bill-appliance" className="field" value={appliance} onChange={(e) => setAppliance(e.target.value as Appliance | "")}>
-            <option value="">Not specified</option>
-            {APPLIANCES.map((a) => (
-              <option key={a} value={a}>{a}</option>
-            ))}
-          </select>
+          <span className="label">Appliance</span>
+          <ApplianceCards value={appliance} onChange={setAppliance} />
         </div>
+
+        {tags.length > 0 && (
+          <div>
+            <p className="label">Quick tags · tap to add to the description</p>
+            <div className="flex flex-wrap gap-2">
+              {tags.map((t) => (
+                <motion.button
+                  key={t}
+                  type="button"
+                  whileHover={{ y: -1 }}
+                  whileTap={{ scale: 0.93 }}
+                  onClick={() => applyTag(t)}
+                  className="cursor-pointer rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs font-medium text-accent-fg hover:border-red-400/60 hover:bg-red-500/20"
+                >
+                  + {t}
+                </motion.button>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div>
           <p className="label flex items-center gap-1"><Zap size={11} className="text-accent-fg" /> Quick add</p>
           <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
@@ -173,6 +200,7 @@ export default function BillForm({ editing = null, job = null, contact = null, o
                       className="field"
                       list="service-suggestions"
                       value={it.description}
+                      onFocus={() => setActiveRow(it.id)}
                       onChange={(e) => patchItem(it.id, { description: e.target.value })}
                       placeholder="Description (e.g. AC Gas Filling)"
                       aria-label={`Item ${idx + 1} description`}
