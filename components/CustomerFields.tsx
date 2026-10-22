@@ -31,7 +31,7 @@ export default function CustomerFields({ value, onChange, contacts, idPrefix }: 
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -6 }}
           transition={{ duration: 0.15 }}
-          className="absolute inset-x-0 top-full z-20 mt-1 overflow-hidden rounded-xl border border-red-500/30 bg-[#141418] shadow-[0_12px_40px_rgba(0,0,0,0.7)]"
+          className="absolute inset-x-0 top-full z-20 mt-1 overflow-hidden rounded-xl border border-red-500/30 bg-pop shadow-[0_12px_40px_rgba(0,0,0,0.7)]"
         >
           {suggestions.map((c) => (
             <li key={c.id}>
@@ -44,7 +44,7 @@ export default function CustomerFields({ value, onChange, contacts, idPrefix }: 
                 className="flex w-full flex-col px-3 py-2 text-left hover:bg-red-500/10"
               >
                 <span className="text-sm font-semibold">{c.name}</span>
-                <span className="text-xs text-zinc-500">{[c.phone, c.address].filter(Boolean).join(" · ")}</span>
+                <span className="text-xs text-subtle">{[c.phone, c.address].filter(Boolean).join(" · ")}</span>
               </button>
             </li>
           ))}

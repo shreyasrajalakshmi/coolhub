@@ -64,7 +64,7 @@ export default function QuickWhatsApp({ onClose, initialContact = null }: Props)
             autoComplete="off"
           />
           {matches.length > 0 && (
-            <ul className="mt-1 overflow-hidden rounded-xl border border-white/10 bg-white/[0.03]">
+            <ul className="mt-1 overflow-hidden rounded-xl border border-line bg-fill-faint">
               {matches.map((c) => (
                 <li key={c.id}>
                   <button
@@ -76,13 +76,13 @@ export default function QuickWhatsApp({ onClose, initialContact = null }: Props)
                     className="flex w-full flex-col px-3 py-2 text-left hover:bg-red-500/10"
                   >
                     <span className="text-sm font-semibold">{c.name}</span>
-                    <span className="text-xs text-zinc-500">{c.phone || "No phone saved"}</span>
+                    <span className="text-xs text-subtle">{c.phone || "No phone saved"}</span>
                   </button>
                 </li>
               ))}
             </ul>
           )}
-          {selected && !selected.phone && <p className="mt-1 text-xs text-red-400">This customer has no phone number saved.</p>}
+          {selected && !selected.phone && <p className="mt-1 text-xs text-accent-fg">This customer has no phone number saved.</p>}
         </div>
 
         <div>

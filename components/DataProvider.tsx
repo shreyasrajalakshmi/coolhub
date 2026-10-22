@@ -1,12 +1,12 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import Logo from "./Logo";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { resolveContact } from "@/lib/customers";
 import { formatBillNumber, formatJobNumber } from "@/lib/format";
 import * as db from "@/lib/storage";
-import { DEFAULT_SETTINGS, type Bill, type BillStatus, type Contact, type Job, type JobStatus, type Settings } from "@/lib/types";
+import { DEFAULT_SETTINGS, type Bill, type BillStatus, type Contact, type Job, type JobStatus, type PaymentMethod, type Settings } from "@/lib/types";
+import Logo from "./Logo";
 
 export interface BackupData {
   bills: Bill[];
@@ -26,7 +26,7 @@ interface DataContextValue {
   nextJobNumber: () => string;
   saveBill: (bill: Bill, isNew: boolean) => Promise<Bill>;
   removeBill: (id: string) => Promise<void>;
-  setBillStatus: (bill: Bill, status: BillStatus) => Promise<void>;
+  setBillStatus: (bill: Bill, status: BillStatus, method?: PaymentMethod) => Promise<void>;
   saveJob: (job: Job, isNew: boolean) => Promise<Job>;
   removeJob: (id: string) => Promise<void>;
   setJobStatus: (job: Job, status: JobStatus) => Promise<void>;
@@ -60,11 +60,9 @@ export default function DataProvider({ children }: { children: React.ReactNode }
   const settingsRef = useRef(settings);
   const contactsRef = useRef(contacts);
   const jobsRef = useRef(jobs);
-  const billsRef = useRef(bills);
   settingsRef.current = settings;
   contactsRef.current = contacts;
   jobsRef.current = jobs;
-  billsRef.current = bills;
 
   const reload = useCallback(async () => {
     try {
@@ -83,8 +81,7 @@ export default function DataProvider({ children }: { children: React.ReactNode }
         }
         return contact.id;
       };
-      const normalized = rawBills.map(normalizeBill);
-      const billsOut = normalized.map((b) => {
+      const billsOut = rawBills.map(normalizeBill).map((b) => {
         if (b.customerId || !b.customer.name.trim()) return b;
         const next = { ...b, customerId: link(b.customer) };
         dirtyBills.push(next);
@@ -142,14 +139,20 @@ export default function DataProvider({ children }: { children: React.ReactNode }
   const saveBill = useCallback<DataContextValue["saveBill"]>(
     (bill, isNew) =>
       guard(async () => {
-        const saved: Bill = { ...bill, customerId: await ensureContact(bill.customer) };
+        const prev = bill.id ? (await db.getAllBills()).find((b) => b.id === bill.id) : undefined;
+        const now = new Date().toISOString();
+        const paid = bill.status === "paid";
+        const saved: Bill = {
+          ...bill,
+          customerId: await ensureContact(bill.customer),
+          // Revenue is counted on the day a bill was settled, so keep the original date when editing a paid bill.
+          paidAt: paid ? (bill.paidAt ?? (prev?.status === "paid" ? (prev.paidAt ?? prev.createdAt) : now)) : undefined,
+          paymentMethod: paid ? (bill.paymentMethod ?? prev?.paymentMethod ?? "cash") : bill.paymentMethod,
+        };
         await db.putBill(saved);
         if (saved.jobId) {
           const job = jobsRef.current.find((j) => j.id === saved.jobId);
-          if (job) {
-            const now = new Date().toISOString();
-            await db.putJob({ ...job, billId: saved.id, status: "completed", completedAt: job.completedAt ?? now, updatedAt: now });
-          }
+          if (job) await db.putJob({ ...job, billId: saved.id, status: "completed", completedAt: job.completedAt ?? now, updatedAt: now });
         }
         if (isNew) updateSettings({ nextNumber: settingsRef.current.nextNumber + 1 });
         await reload();
@@ -170,9 +173,15 @@ export default function DataProvider({ children }: { children: React.ReactNode }
   );
 
   const setBillStatus = useCallback<DataContextValue["setBillStatus"]>(
-    (bill, status) =>
+    (bill, status, method) =>
       guard(async () => {
-        await db.putBill({ ...bill, status });
+        const paid = status === "paid";
+        await db.putBill({
+          ...bill,
+          status,
+          paidAt: paid ? new Date().toISOString() : undefined,
+          paymentMethod: paid ? (method ?? bill.paymentMethod ?? "cash") : bill.paymentMethod,
+        });
         await reload();
       }),
     [guard, reload],
@@ -186,7 +195,7 @@ export default function DataProvider({ children }: { children: React.ReactNode }
           ...job,
           customerId: await ensureContact(job.customer),
           updatedAt: now,
-          completedAt: job.status === "completed" ? job.completedAt ?? now : undefined,
+          completedAt: job.status === "completed" ? (job.completedAt ?? now) : undefined,
         };
         await db.putJob(saved);
         if (isNew) updateSettings({ nextJobNumber: settingsRef.current.nextJobNumber + 1 });
@@ -206,8 +215,13 @@ export default function DataProvider({ children }: { children: React.ReactNode }
   );
 
   const setJobStatus = useCallback<DataContextValue["setJobStatus"]>(
-    (job, status) => saveJob({ ...job, status, completedAt: status === "completed" ? job.completedAt : undefined }, false).then(() => undefined),
-    [saveJob],
+    (job, status) =>
+      guard(async () => {
+        const now = new Date().toISOString();
+        await db.putJob({ ...job, status, updatedAt: now, completedAt: status === "completed" ? (job.completedAt ?? now) : undefined });
+        await reload();
+      }),
+    [guard, reload],
   );
 
   const saveContact = useCallback(
@@ -273,8 +287,8 @@ export default function DataProvider({ children }: { children: React.ReactNode }
   if (!ready) {
     return (
       <div className="flex min-h-dvh items-center justify-center" role="status" aria-label="Loading">
-        <motion.div animate={{ scale: [1, 1.08, 1], opacity: [0.8, 1, 0.8] }} transition={{ duration: 1.6, repeat: Infinity }}>
-          <Logo size={96} className="animate-pulse-glow" />
+        <motion.div animate={{ scale: [1, 1.06, 1], opacity: [0.85, 1, 0.85] }} transition={{ duration: 1.6, repeat: Infinity }}>
+          <Logo size={88} />
         </motion.div>
       </div>
     );

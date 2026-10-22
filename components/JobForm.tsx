@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import { Save } from "lucide-react";
 import { newId } from "@/lib/format";
-import { QUICK_ISSUES, type Appliance, type Contact, type Job, type JobStatus } from "@/lib/types";
+import { APPLIANCES, QUICK_ISSUES, type Appliance, type Contact, type Job, type JobStatus } from "@/lib/types";
 import CustomerFields from "./CustomerFields";
 import { useData } from "./DataProvider";
 import { Button, JOB_STATUS } from "./ui";
@@ -16,7 +16,6 @@ interface Props {
   onCancel: () => void;
 }
 
-const APPLIANCES: Appliance[] = ["AC", "Fridge", "Other"];
 
 export default function JobForm({ editing = null, contact = null, onSaved, onCancel }: Props) {
   const { settings, contacts, saveJob, nextJobNumber } = useData();
@@ -77,7 +76,7 @@ export default function JobForm({ editing = null, contact = null, onSaved, onCan
               type="button"
               onClick={() => setAppliance(a)}
               aria-pressed={appliance === a}
-              className={appliance === a ? "!border-red-500/60 !bg-red-500/15 !text-red-300 shadow-[0_0_18px_-4px_rgba(239,68,68,0.8)]" : "!text-zinc-500"}
+              className={appliance === a ? "!border-red-500/60 !bg-red-500/15 !text-accent-fg" : "!text-subtle"}
             >
               {a}
             </Button>
@@ -101,7 +100,7 @@ export default function JobForm({ editing = null, contact = null, onSaved, onCan
               whileHover={{ scale: 1.05, y: -1 }}
               whileTap={{ scale: 0.92 }}
               onClick={() => setIssue(q)}
-              className="shrink-0 rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-300 hover:border-red-400/60 hover:bg-red-500/20"
+              className="shrink-0 rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs font-medium text-accent-fg hover:border-red-400/60 hover:bg-red-500/20"
             >
               {q}
             </motion.button>
@@ -118,7 +117,7 @@ export default function JobForm({ editing = null, contact = null, onSaved, onCan
               type="button"
               onClick={() => setStatus(s)}
               aria-pressed={status === s}
-              className={`!px-2 text-xs ${status === s ? JOB_STATUS[s].active : "!text-zinc-500"}`}
+              className={`!px-2 text-xs ${status === s ? JOB_STATUS[s].active : "!text-subtle"}`}
             >
               {JOB_STATUS[s].label}
             </Button>
@@ -142,7 +141,7 @@ export default function JobForm({ editing = null, contact = null, onSaved, onCan
         <textarea id="job-notes" className="field" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Parts needed, access instructions…" />
       </div>
 
-      {error && <p role="alert" className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm font-medium text-red-300">{error}</p>}
+      {error && <p role="alert" className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm font-medium text-accent-fg">{error}</p>}
 
       <div className="flex gap-2">
         <Button type="button" onClick={onCancel}>Cancel</Button>

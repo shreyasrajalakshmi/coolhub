@@ -6,7 +6,7 @@ import { Plus, Save, Trash2, Zap } from "lucide-react";
 import { computeTotals, lineTotal } from "@/lib/calc";
 import { formatMoney, newId } from "@/lib/format";
 import { softSpring } from "@/lib/motion";
-import { QUICK_SERVICES, type Bill, type BillStatus, type Contact, type DiscountType, type Job } from "@/lib/types";
+import { type Bill, type BillStatus, type Contact, type DiscountType, type Job, type PaymentMethod, type ServicePreset } from "@/lib/types";
 import AnimatedNumber from "./AnimatedNumber";
 import CustomerFields from "./CustomerFields";
 import { useData } from "./DataProvider";
@@ -19,9 +19,8 @@ interface FormItem {
   price: string;
 }
 
-const blankItem = (description = ""): FormItem => ({ id: newId(), description, qty: "1", price: "" });
+const blankItem = (description = "", price = ""): FormItem => ({ id: newId(), description, qty: "1", price });
 const num = (s: string) => (s.trim() === "" ? 0 : Number(s));
-const APPLIANCE_LABEL = { AC: "AC", Fridge: "Fridge", Other: "Appliance" } as const;
 
 interface Props {
   editing?: Bill | null;
@@ -41,13 +40,14 @@ export default function BillForm({ editing = null, job = null, contact = null, o
     editing
       ? editing.items.map((i) => ({ id: i.id, description: i.description, qty: String(i.qty), price: String(i.price) }))
       : job
-        ? [blankItem(`${APPLIANCE_LABEL[job.appliance]} – ${job.issue}`)]
+        ? [blankItem(`${job.appliance === "Other" ? "Appliance" : job.appliance} – ${job.issue}`)]
         : [blankItem()],
   );
   const [taxRate, setTaxRate] = useState(String(editing ? (editing.taxRate ?? 0) : settings.defaultTaxRate));
   const [discountType, setDiscountType] = useState<DiscountType>(editing?.discountType ?? "amount");
   const [discountValue, setDiscountValue] = useState(editing && editing.discountValue ? String(editing.discountValue) : "");
   const [status, setStatus] = useState<BillStatus>(editing?.status ?? "paid");
+  const [method, setMethod] = useState<PaymentMethod>(editing?.paymentMethod ?? "cash");
   const [notes, setNotes] = useState(editing?.notes ?? (job && job.notes ? `Job ${job.number}: ${job.notes}` : ""));
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -59,12 +59,14 @@ export default function BillForm({ editing = null, job = null, contact = null, o
 
   const patchItem = (id: string, patch: Partial<FormItem>) => setItems((list) => list.map((i) => (i.id === id ? { ...i, ...patch } : i)));
 
-  const addQuick = (description: string) =>
+  const addPreset = (preset: ServicePreset) => {
+    const price = preset.price ? String(preset.price) : "";
     setItems((list) => {
       const last = list[list.length - 1];
-      if (last && !last.description.trim() && !last.price.trim()) return [...list.slice(0, -1), { ...last, description }];
-      return [...list, blankItem(description)];
+      if (last && !last.description.trim() && !last.price.trim()) return [...list.slice(0, -1), { ...last, description: preset.name, price }];
+      return [...list, blankItem(preset.name, price)];
     });
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,6 +97,7 @@ export default function BillForm({ editing = null, job = null, contact = null, o
       tax,
       total,
       status,
+      paymentMethod: status === "paid" ? method : undefined,
       notes: notes.trim(),
     };
     setSaving(true);
@@ -109,36 +112,36 @@ export default function BillForm({ editing = null, job = null, contact = null, o
   return (
     <form onSubmit={submit} className="space-y-5">
       <div className="flex items-center justify-between">
-        <h3 className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">Customer</h3>
-        <span className="rounded-full border border-red-500/40 bg-red-500/10 px-3 py-1 text-xs font-bold text-red-300 shadow-[0_0_14px_-4px_rgba(239,68,68,0.8)]">
+        <h3 className="text-xs font-bold uppercase tracking-[0.18em] text-subtle">Customer</h3>
+        <span className="rounded-full border border-red-500/40 bg-red-500/10 px-3 py-1 text-xs font-bold text-accent-fg">
           {editing?.number ?? nextBillNumber()}
         </span>
       </div>
       <CustomerFields value={customer} onChange={(p) => setCustomer((c) => ({ ...c, ...p }))} contacts={contacts} idPrefix="bill" />
 
       <div className="space-y-3">
-        <h3 className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">Services &amp; Parts</h3>
+        <h3 className="text-xs font-bold uppercase tracking-[0.18em] text-subtle">Services &amp; Parts</h3>
         <div>
-          <p className="label flex items-center gap-1"><Zap size={11} className="text-red-400" /> Quick add</p>
+          <p className="label flex items-center gap-1"><Zap size={11} className="text-accent-fg" /> Quick add</p>
           <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-            {QUICK_SERVICES.map((s) => (
+            {settings.servicePresets.map((p) => (
               <motion.button
-                key={s}
+                key={p.name}
                 type="button"
                 whileHover={{ scale: 1.05, y: -1 }}
                 whileTap={{ scale: 0.92 }}
-                onClick={() => addQuick(s)}
-                className="shrink-0 rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-300 hover:border-red-400/60 hover:bg-red-500/20"
+                onClick={() => addPreset(p)}
+                className="shrink-0 rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs font-medium text-accent-fg hover:border-red-400/60 hover:bg-red-500/20"
               >
-                + {s}
+                + {p.name}{p.price ? ` · ${formatMoney(p.price)}` : ""}
               </motion.button>
             ))}
           </div>
         </div>
 
         <datalist id="service-suggestions">
-          {QUICK_SERVICES.map((s) => (
-            <option key={s} value={s} />
+          {settings.servicePresets.map((p) => (
+            <option key={p.name} value={p.name} />
           ))}
         </datalist>
 
@@ -154,9 +157,9 @@ export default function BillForm({ editing = null, job = null, contact = null, o
                 transition={softSpring}
                 className="overflow-hidden"
               >
-                <div className="mb-3 rounded-2xl border border-white/10 bg-white/[0.03] p-3">
+                <div className="mb-3 rounded-2xl border border-line bg-fill-faint p-3">
                   <div className="mb-2 flex items-center gap-2">
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white shadow-[0_0_12px_rgba(239,68,68,0.7)]">{idx + 1}</span>
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white">{idx + 1}</span>
                     <input
                       className="field"
                       list="service-suggestions"
@@ -170,7 +173,7 @@ export default function BillForm({ editing = null, job = null, contact = null, o
                       whileHover={{ scale: 1.15 }}
                       whileTap={{ scale: 0.85 }}
                       onClick={() => setItems((l) => (l.length === 1 ? [blankItem()] : l.filter((x) => x.id !== it.id)))}
-                      className="shrink-0 rounded-lg p-2 text-zinc-500 hover:bg-red-500/15 hover:text-red-400"
+                      className="shrink-0 rounded-lg p-2 text-subtle hover:bg-red-500/15 hover:text-accent-fg"
                       aria-label={`Remove item ${idx + 1}`}
                     >
                       <Trash2 size={18} />
@@ -187,7 +190,7 @@ export default function BillForm({ editing = null, job = null, contact = null, o
                     </div>
                     <div>
                       <label className="label">Total</label>
-                      <div className="flex h-[46px] items-center justify-end rounded-xl border border-white/5 bg-black/30 px-3 text-sm font-bold text-zinc-100">
+                      <div className="flex h-[46px] items-center justify-end rounded-xl border border-line-faint bg-sunk px-3 text-sm font-bold text-fg">
                         {formatMoney(lineTotal(num(it.qty), num(it.price)))}
                       </div>
                     </div>
@@ -204,7 +207,7 @@ export default function BillForm({ editing = null, job = null, contact = null, o
       </div>
 
       <div className="space-y-3">
-        <h3 className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">Totals</h3>
+        <h3 className="text-xs font-bold uppercase tracking-[0.18em] text-subtle">Totals</h3>
         <div className="grid grid-cols-3 gap-3">
           <div>
             <label className="label" htmlFor="disc">Discount</label>
@@ -224,22 +227,22 @@ export default function BillForm({ editing = null, job = null, contact = null, o
         </div>
 
         <dl className="space-y-1.5 rounded-2xl border border-red-500/25 bg-gradient-to-br from-red-500/10 to-transparent p-4 text-sm">
-          <div className="flex justify-between"><dt className="text-zinc-500">Subtotal</dt><dd><AnimatedNumber value={totals.subtotal} format={formatMoney} duration={0.4} /></dd></div>
+          <div className="flex justify-between"><dt className="text-subtle">Subtotal</dt><dd><AnimatedNumber value={totals.subtotal} format={formatMoney} duration={0.4} /></dd></div>
           <AnimatePresence initial={false}>
             {totals.discount > 0 && (
-              <motion.div key="d" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="flex justify-between overflow-hidden text-emerald-400">
+              <motion.div key="d" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="flex justify-between overflow-hidden text-ok-fg">
                 <dt>Discount</dt><dd>-{formatMoney(totals.discount)}</dd>
               </motion.div>
             )}
             {totals.tax > 0 && (
               <motion.div key="t" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="flex justify-between overflow-hidden">
-                <dt className="text-zinc-500">Tax ({num(taxRate)}%)</dt><dd>{formatMoney(totals.tax)}</dd>
+                <dt className="text-subtle">Tax ({num(taxRate)}%)</dt><dd>{formatMoney(totals.tax)}</dd>
               </motion.div>
             )}
           </AnimatePresence>
-          <div className="flex items-baseline justify-between border-t border-white/10 pt-2">
+          <div className="flex items-baseline justify-between border-t border-line pt-2">
             <dt className="font-semibold">Grand Total</dt>
-            <dd className="font-display text-3xl font-bold text-red-400 text-glow"><AnimatedNumber value={totals.total} format={formatMoney} duration={0.5} /></dd>
+            <dd className="font-display text-3xl font-bold text-accent-fg"><AnimatedNumber value={totals.total} format={formatMoney} duration={0.5} /></dd>
           </div>
         </dl>
 
@@ -255,9 +258,9 @@ export default function BillForm({ editing = null, job = null, contact = null, o
                 className={
                   status === s
                     ? s === "paid"
-                      ? "!border-emerald-400/60 !bg-emerald-400/15 !text-emerald-300 shadow-[0_0_18px_-4px_rgba(52,211,153,0.8)]"
-                      : "!border-red-500/60 !bg-red-500/15 !text-red-300 shadow-[0_0_18px_-4px_rgba(239,68,68,0.8)]"
-                    : "!text-zinc-500"
+                      ? "!border-emerald-400/60 !bg-emerald-400/15 !text-ok-fg"
+                      : "!border-red-500/60 !bg-red-500/15 !text-accent-fg"
+                    : "!text-subtle"
                 }
               >
                 {s === "paid" ? "Paid" : "Pending"}
@@ -265,6 +268,21 @@ export default function BillForm({ editing = null, job = null, contact = null, o
             ))}
           </div>
         </div>
+
+        <AnimatePresence initial={false}>
+          {status === "paid" && (
+            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+              <span className="label">Paid via</span>
+              <div className="grid grid-cols-2 gap-2 pb-1">
+                {(["cash", "upi"] as const).map((m) => (
+                  <Button key={m} type="button" onClick={() => setMethod(m)} aria-pressed={method === m} className={method === m ? "!border-red-500/60 !bg-red-500/15 !text-accent-fg" : "!text-subtle"}>
+                    {m === "cash" ? "Cash" : "UPI / Online"}
+                  </Button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <div>
           <label className="label" htmlFor="notes">Notes (optional)</label>
@@ -279,14 +297,14 @@ export default function BillForm({ editing = null, job = null, contact = null, o
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm font-medium text-red-300"
+            className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm font-medium text-accent-fg"
           >
             {error}
           </motion.p>
         )}
       </AnimatePresence>
 
-      <div className="sticky bottom-0 -mx-5 -mb-5 flex gap-2 border-t border-white/10 bg-[#0c0c0f]/95 px-5 py-4 backdrop-blur">
+      <div className="sticky bottom-0 -mx-5 -mb-5 flex gap-2 border-t border-line bg-surface/95 px-5 py-4 backdrop-blur">
         <Button type="button" onClick={onCancel}>Cancel</Button>
         <Button type="submit" variant="primary" disabled={saving} className="flex-1 !py-3.5 text-base">
           <Save size={18} /> {editing ? "Update Bill" : "Save & Generate Invoice"}

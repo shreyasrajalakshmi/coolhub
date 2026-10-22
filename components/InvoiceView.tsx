@@ -30,15 +30,17 @@ function StatusBadge({ status }: { status: Bill["status"] }) {
 function A4Invoice({ bill, settings }: { bill: Bill; settings: Settings }) {
   const { customer } = bill;
   return (
-    <div className="invoice-sheet mx-auto w-full max-w-[210mm] bg-white p-5 text-slate-900 shadow-lg sm:p-10">
+    <div className="invoice-sheet relative isolate mx-auto w-full max-w-[210mm] overflow-hidden bg-white p-5 text-slate-900 shadow-lg sm:p-10">
+      <div aria-hidden className="invoice-watermark -z-10" />
       <div className="flex flex-wrap items-start justify-between gap-4 border-b-4 border-red-600 pb-5">
         <div>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo.jpg" alt="" className="mb-2 h-16 w-16 rounded-lg object-cover" />
           <h1 className="text-3xl font-extrabold tracking-tight text-red-700">{settings.shopName}</h1>
-          {settings.tagline && <p className="text-sm font-medium text-slate-600">{settings.tagline}</p>}
-          {settings.address && <p className="mt-2 max-w-xs whitespace-pre-line text-sm text-slate-600">{settings.address}</p>}
+          {settings.services && <p className="mt-0.5 max-w-sm text-sm font-medium text-slate-600">{settings.services}</p>}
+          {settings.address && <p className="mt-2 max-w-sm whitespace-pre-line text-sm text-slate-600">{settings.address}</p>}
           {settings.phone && <p className="text-sm text-slate-600">Phone: {settings.phone}</p>}
+          {settings.email && <p className="text-sm text-slate-600">Email: {settings.email}</p>}
           {settings.gstin && <p className="text-sm text-slate-600">GSTIN: {settings.gstin}</p>}
         </div>
         <div className="w-full text-left sm:w-auto sm:text-right">
@@ -164,9 +166,10 @@ function ThermalInvoice({
     >
       <div className="text-center">
         <p className="text-base font-bold uppercase">{settings.shopName}</p>
-        {settings.tagline && <p>{settings.tagline}</p>}
+        {settings.services && <p>{settings.services}</p>}
         {settings.address && <p className="whitespace-pre-line">{settings.address}</p>}
         {settings.phone && <p>Ph: {settings.phone}</p>}
+        {settings.email && <p>{settings.email}</p>}
         {settings.gstin && <p>GSTIN: {settings.gstin}</p>}
       </div>
       <Dash />

@@ -106,7 +106,7 @@ function Jobs() {
       />
 
       <div className="relative">
-        <Search size={18} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+        <Search size={18} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-subtle" />
         <input className="field !pl-10" type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search by customer, phone, issue or job no." aria-label="Search jobs" />
       </div>
 
@@ -141,22 +141,22 @@ function Jobs() {
                     columns.current[s] = el;
                   }}
                   className={`min-h-[22rem] rounded-2xl border p-3 transition-all duration-200 ${
-                    hover === s ? "border-red-500/70 bg-red-500/[0.08] shadow-[0_0_40px_-8px_rgba(239,68,68,0.6)]" : "border-white/10 bg-white/[0.02]"
+                    hover === s ? "border-red-500/70 bg-red-500/[0.08]" : "border-line bg-fill-faint"
                   }`}
                 >
                   <div className="mb-3 flex items-center justify-between px-1">
                     <h2 className={`flex items-center gap-2 text-sm font-bold uppercase tracking-wider ${meta.text}`}>
-                      <span className={`h-2 w-2 rounded-full ${meta.dot} shadow-[0_0_10px_2px_currentColor]`} />
+                      <span className={`h-2 w-2 rounded-full ${meta.dot}`} />
                       {meta.column}
                     </h2>
-                    <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs font-bold text-zinc-300">{list.length}</span>
+                    <span className="rounded-full bg-fill-strong px-2 py-0.5 text-xs font-bold text-fg2">{list.length}</span>
                   </div>
                   <div className="space-y-3">
                     {list.map((j) => (
                       <JobCard key={j.id} job={j} bill={billFor(j)} draggable onDrag={onDrag} onDragEnd={onDragEnd} />
                     ))}
                     {list.length === 0 && (
-                      <p className="rounded-xl border border-dashed border-white/10 py-10 text-center text-xs text-zinc-600">Drop jobs here</p>
+                      <p className="rounded-xl border border-dashed border-line py-10 text-center text-xs text-faint">Drop jobs here</p>
                     )}
                   </div>
                 </div>

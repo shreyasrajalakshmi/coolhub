@@ -1,35 +1,23 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useEffect, useRef, useState } from "react";
-import { Download, Upload, Smartphone } from "lucide-react";
-import type { Bill, Contact, Job, PaperSize, Settings } from "@/lib/types";
+import { useRef, useState } from "react";
+import { Download, Plus, RotateCcw, Trash2, Upload } from "lucide-react";
+import { DEFAULT_PRESETS, type Bill, type Contact, type Job, type PaperSize, type Settings } from "@/lib/types";
 import { useData } from "./DataProvider";
+import InstallButton from "./InstallButton";
+import { useInstall } from "./InstallProvider";
 import { Button, PageHeader } from "./ui";
 import { rise, stagger } from "@/lib/motion";
-
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
-}
 
 export default function SettingsPanel() {
   const { settings, updateSettings: onChange, bills, jobs, contacts, importAll } = useData();
   const fileRef = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState("");
-  const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
-
-  useEffect(() => {
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setInstallEvent(e as BeforeInstallPromptEvent);
-    };
-    window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
-  }, []);
+  const { available: canInstall } = useInstall();
 
   const exportBackup = () => {
-    const blob = new Blob([JSON.stringify({ app: "coolhub", version: 2, settings, bills, jobs, contacts }, null, 2)], {
+    const blob = new Blob([JSON.stringify({ app: "coolhub", version: 3, settings, bills, jobs, contacts }, null, 2)], {
       type: "application/json",
     });
     const a = document.createElement("a");
@@ -65,10 +53,14 @@ export default function SettingsPanel() {
       <PageHeader title="Shop Settings" subtitle="Shown on invoices and used across the app" />
 
       <motion.section variants={rise} className="card space-y-3">
-        <h3 className="text-xs font-bold uppercase tracking-[0.18em] text-red-400">Shop Details</h3>
+        <h3 className="text-xs font-bold uppercase tracking-[0.18em] text-accent-fg">Shop Details</h3>
         {text("shopName", "Shop Name")}
-        {text("tagline", "Tagline")}
-        {text("phone", "Shop Phone", { type: "tel", inputMode: "tel", placeholder: "98765 43210" })}
+        <div>
+          <label className="label" htmlFor="services">Services Offered</label>
+          <textarea id="services" className="field" rows={2} value={settings.services} onChange={(e) => onChange({ services: e.target.value })} placeholder="Printed under the shop name on invoices" />
+        </div>
+        {text("phone", "Phone Number(s)", { type: "tel", inputMode: "tel", placeholder: "9645128949, 8089785214" })}
+        {text("email", "Email", { type: "email", inputMode: "email", placeholder: "shop@example.com" })}
         <div>
           <label className="label" htmlFor="address">Address</label>
           <textarea id="address" className="field" rows={3} value={settings.address} onChange={(e) => onChange({ address: e.target.value })} placeholder="Shop address shown on the invoice" />
@@ -79,7 +71,7 @@ export default function SettingsPanel() {
         </div>
         {text("gstin", "GSTIN (optional)", { placeholder: "Shown on the invoice if set" })}
         <div>
-          <label className="label" htmlFor="footerNote">Invoice Footer Note</label>
+          <label className="label" htmlFor="footerNote">Invoice Footer Note / Tagline</label>
           <textarea id="footerNote" className="field" rows={2} value={settings.footerNote} onChange={(e) => onChange({ footerNote: e.target.value })} />
         </div>
         <div>
@@ -89,7 +81,7 @@ export default function SettingsPanel() {
       </motion.section>
 
       <motion.section variants={rise} className="card space-y-3">
-        <h3 className="text-xs font-bold uppercase tracking-[0.18em] text-red-400">Billing</h3>
+        <h3 className="text-xs font-bold uppercase tracking-[0.18em] text-accent-fg">Billing</h3>
         <div className="grid grid-cols-2 gap-3">
           {text("invoicePrefix", "Bill No. Prefix")}
           <div>
@@ -122,24 +114,53 @@ export default function SettingsPanel() {
       </motion.section>
 
       <motion.section variants={rise} className="card space-y-3">
-        <h3 className="text-xs font-bold uppercase tracking-[0.18em] text-red-400">Install & Backup</h3>
-        {installEvent ? (
-          <Button
-            variant="primary"
-            className="w-full"
-            onClick={async () => {
-              await installEvent.prompt();
-              setInstallEvent(null);
-            }}
-          >
-            <Smartphone size={16} /> Install app on this device
-          </Button>
-        ) : (
-          <p className="text-xs text-zinc-500">
-            To install: on Android Chrome tap ⋮ → “Install app”; on iPhone Safari tap Share → “Add to Home Screen”.
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="text-xs font-bold uppercase tracking-[0.18em] text-accent-fg">Service Presets</h3>
+          <button type="button" onClick={() => onChange({ servicePresets: DEFAULT_PRESETS })} className="inline-flex cursor-pointer items-center gap-1 text-xs font-semibold text-subtle hover:text-fg">
+            <RotateCcw size={12} /> Reset list
+          </button>
+        </div>
+        <p className="text-xs text-subtle">One-tap items on the bill form. A default price is optional and can always be changed per bill.</p>
+        <ul className="space-y-2">
+          {settings.servicePresets.map((p, i) => (
+            <li key={i} className="flex items-center gap-2">
+              <input
+                className="field"
+                aria-label={`Preset ${i + 1} name`}
+                value={p.name}
+                onChange={(e) => onChange({ servicePresets: settings.servicePresets.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)) })}
+              />
+              <input
+                className="field !w-28 shrink-0"
+                type="number"
+                inputMode="decimal"
+                min={0}
+                step="any"
+                placeholder="₹ price"
+                aria-label={`Preset ${i + 1} default price`}
+                value={p.price ?? ""}
+                onChange={(e) => onChange({ servicePresets: settings.servicePresets.map((x, j) => (j === i ? { ...x, price: e.target.value === "" ? undefined : Math.max(0, Number(e.target.value)) } : x)) })}
+              />
+              <button type="button" aria-label={`Remove preset ${i + 1}`} title="Remove" onClick={() => onChange({ servicePresets: settings.servicePresets.filter((_, j) => j !== i) })} className="shrink-0 cursor-pointer rounded-lg p-2 text-subtle hover:bg-red-500/10 hover:text-accent-fg">
+                <Trash2 size={16} />
+              </button>
+            </li>
+          ))}
+        </ul>
+        <Button onClick={() => onChange({ servicePresets: [...settings.servicePresets, { name: "" }] })} className="w-full border-dashed">
+          <Plus size={16} /> Add preset
+        </Button>
+      </motion.section>
+
+      <motion.section variants={rise} className="card space-y-3">
+        <h3 className="text-xs font-bold uppercase tracking-[0.18em] text-accent-fg">Install & Backup</h3>
+        <InstallButton className="w-full" />
+        {!canInstall && (
+          <p className="text-xs text-subtle">
+            Install button not showing? The app is probably already installed, or this browser can&apos;t install it. On Android Chrome use ⋮ → “Install app”; on iPhone Safari use Share → “Add to Home Screen”.
           </p>
         )}
-        <p className="text-xs text-zinc-500">
+        <p className="text-xs text-subtle">
           Bills, jobs and customers are stored only on this device. Download a backup regularly so you never lose them.
         </p>
         <div className="grid grid-cols-2 gap-2">
@@ -157,8 +178,9 @@ export default function SettingsPanel() {
             }}
           />
         </div>
-        {message && <p className="text-sm font-medium text-red-400">{message}</p>}
+        {message && <p className="text-sm font-medium text-accent-fg">{message}</p>}
       </motion.section>
+
     </motion.div>
   );
 }

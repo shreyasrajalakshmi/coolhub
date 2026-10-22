@@ -39,7 +39,7 @@ export default function Drawer({ title, subtitle, onClose, children, variant = "
 
   return createPortal(
     <motion.div
-      className={`no-print fixed inset-0 z-50 flex bg-black/70 backdrop-blur-sm ${side ? "justify-end" : "items-end justify-center md:items-center md:p-6"}`}
+      className={`no-print fixed inset-0 z-50 flex bg-scrim backdrop-blur-sm ${side ? "justify-end" : "items-end justify-center md:items-center md:p-6"}`}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -59,7 +59,7 @@ export default function Drawer({ title, subtitle, onClose, children, variant = "
         dragConstraints={{ top: 0, bottom: 0 }}
         dragElastic={{ top: 0, bottom: 0.6 }}
         onDragEnd={(_, info) => (info.offset.y > 120 || info.velocity.y > 700) && onClose()}
-        className={`relative flex w-full flex-col overflow-hidden border border-white/10 bg-[#0c0c0f]/95 shadow-[0_0_80px_-20px_rgba(239,68,68,0.45)] ${
+        className={`relative flex w-full flex-col overflow-hidden border border-line bg-surface/95 ${
           side
             ? "h-dvh max-w-xl rounded-l-3xl border-r-0"
             : desktop
@@ -72,19 +72,19 @@ export default function Drawer({ title, subtitle, onClose, children, variant = "
 
         {!desktop && (
           <div className="flex cursor-grab touch-none justify-center pt-2.5 active:cursor-grabbing" onPointerDown={(e) => controls.start(e)}>
-            <span className="h-1.5 w-10 rounded-full bg-white/20" />
+            <span className="h-1.5 w-10 rounded-full bg-fill-xstrong" />
           </div>
         )}
-        <div className="flex items-center justify-between gap-3 border-b border-white/10 px-5 py-4">
+        <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-4">
           <div className="min-w-0">
             <h2 className="truncate font-display text-lg font-bold">{title}</h2>
-            {subtitle && <p className="truncate text-xs text-zinc-500">{subtitle}</p>}
+            {subtitle && <p className="truncate text-xs text-subtle">{subtitle}</p>}
           </div>
           <motion.button
             whileHover={{ rotate: 90, scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={onClose}
-            className="rounded-xl border border-white/10 bg-white/5 p-2 text-zinc-400 hover:text-white"
+            className="rounded-xl border border-line bg-fill p-2 text-muted hover:text-fg"
             aria-label="Close"
           >
             <X size={18} />

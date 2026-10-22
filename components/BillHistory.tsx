@@ -101,29 +101,29 @@ export default function BillHistory({ bills, onNew, onView, onEdit, onDelete, on
       />
 
       <motion.div variants={stagger} initial="hidden" animate="show" className="grid grid-cols-2 gap-3 md:grid-cols-3">
-        <motion.div variants={rise} className="card glow-border relative col-span-2 overflow-hidden md:col-span-1">
+        <motion.div variants={rise} className="card border-red-500/40 relative col-span-2 overflow-hidden md:col-span-1">
           <div className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full bg-red-500/30 blur-3xl" />
-          <p className="relative flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-400">
-            <IndianRupee size={12} className="text-red-400" /> Revenue collected{isFiltered ? " (filtered)" : ""}
+          <p className="relative flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">
+            <IndianRupee size={12} className="text-accent-fg" /> Revenue collected{isFiltered ? " (filtered)" : ""}
           </p>
-          <p className="relative mt-1 font-display text-3xl font-bold text-glow">
+          <p className="relative mt-1 font-display text-3xl font-bold">
             <AnimatedNumber value={collected} format={formatMoney} />
           </p>
-          <p className="relative mt-1 text-xs text-zinc-500">{filtered.length} invoice{filtered.length === 1 ? "" : "s"}</p>
+          <p className="relative mt-1 text-xs text-subtle">{filtered.length} invoice{filtered.length === 1 ? "" : "s"}</p>
         </motion.div>
         <motion.div variants={rise} className="card">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Pending payment</p>
-          <p className="mt-1 font-display text-xl font-bold text-red-400"><AnimatedNumber value={pending} format={formatMoney} /></p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-subtle">Pending payment</p>
+          <p className="mt-1 font-display text-xl font-bold text-accent-fg"><AnimatedNumber value={pending} format={formatMoney} /></p>
         </motion.div>
         <motion.div variants={rise} className="card">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Total billed</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-subtle">Total billed</p>
           <p className="mt-1 font-display text-xl font-bold"><AnimatedNumber value={collected + pending} format={formatMoney} /></p>
         </motion.div>
       </motion.div>
 
       <div className="card space-y-3">
         <div className="relative">
-          <Search size={18} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+          <Search size={18} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-subtle" />
           <input
             className="field !pl-10"
             type="search"
@@ -143,7 +143,7 @@ export default function BillHistory({ bills, onNew, onView, onEdit, onDelete, on
                 onClick={() => toggle(c.id)}
                 aria-pressed={on}
                 className={`relative shrink-0 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors ${
-                  on ? "border-red-500/60 bg-red-500/15 text-red-300 shadow-[0_0_14px_-4px_rgba(239,68,68,0.8)]" : "border-white/10 text-zinc-500 hover:text-zinc-300"
+                  on ? "border-red-500/60 bg-red-500/15 text-accent-fg" : "border-line text-subtle hover:text-fg2"
                 }`}
               >
                 {c.label}
@@ -187,11 +187,11 @@ export default function BillHistory({ bills, onNew, onView, onEdit, onDelete, on
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="truncate text-base font-semibold">{b.customer.name}</p>
-                    <p className="text-xs text-zinc-500">
+                    <p className="text-xs text-subtle">
                       {b.number} · {formatDate(b.createdAt)}
                       {b.customer.phone && ` · ${b.customer.phone}`}
                     </p>
-                    <p className="mt-1 truncate text-xs text-zinc-600">{b.items.map((it) => it.description).join(", ")}</p>
+                    <p className="mt-1 truncate text-xs text-faint">{b.items.map((it) => it.description).join(", ")}</p>
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-1.5">
                     <p className="font-display text-lg font-bold">{formatMoney(b.total)}</p>
@@ -200,7 +200,7 @@ export default function BillHistory({ bills, onNew, onView, onEdit, onDelete, on
                     </button>
                   </div>
                 </div>
-                <div className="mt-3 flex gap-2 border-t border-white/10 pt-3">
+                <div className="mt-3 flex gap-2 border-t border-line pt-3">
                   <Button onClick={() => onView(b)} className="flex-1 !py-2"><Eye size={16} /> View</Button>
                   <Button onClick={() => onEdit(b)} className="flex-1 !py-2"><Pencil size={16} /> Edit</Button>
                   <Button variant="danger" onClick={() => onDelete(b)} className="!px-3 !py-2" aria-label="Delete bill"><Trash2 size={16} /></Button>

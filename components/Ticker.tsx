@@ -10,8 +10,8 @@ export default function Ticker({ items }: { items: string[] }) {
   const row = (
     <div className="flex shrink-0 items-center gap-8 pr-8">
       {lap.map((t, i) => (
-        <span key={i} className="flex items-center gap-2 whitespace-nowrap text-xs text-zinc-300">
-          <span className="h-1 w-1 rounded-full bg-red-500 shadow-[0_0_8px_2px_rgba(239,68,68,0.8)]" />
+        <span key={i} className="flex items-center gap-2 whitespace-nowrap text-xs text-fg2">
+          <span className="h-1 w-1 rounded-full bg-red-500" />
           {t}
         </span>
       ))}
@@ -19,7 +19,7 @@ export default function Ticker({ items }: { items: string[] }) {
   );
   return (
     <div className="card relative flex items-center gap-3 overflow-hidden !py-2.5">
-      <span className="relative z-10 flex shrink-0 items-center gap-2 rounded-full border border-red-500/50 bg-black px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-red-400">
+      <span className="relative z-10 flex shrink-0 items-center gap-2 rounded-full border border-red-500/50 bg-black px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-accent-fg">
         <span className="relative flex h-2 w-2">
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
           <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
@@ -28,7 +28,7 @@ export default function Ticker({ items }: { items: string[] }) {
       </span>
       <div className="relative min-w-0 flex-1 overflow-hidden [mask-image:linear-gradient(90deg,transparent,#000_6%,#000_94%,transparent)]">
         {items.length === 0 ? (
-          <span className="text-xs text-zinc-500">Waiting for activity…</span>
+          <span className="text-xs text-subtle">Waiting for activity…</span>
         ) : reduce ? (
           <div className="overflow-x-auto">{row}</div>
         ) : (

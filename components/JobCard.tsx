@@ -2,7 +2,8 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { useRef, useState } from "react";
-import { AirVent, ChevronDown, Eye, FileText, GripVertical, MessageCircle, Pencil, Phone, Refrigerator, Trash2, Wrench } from "lucide-react";
+import { AirVent, Car, ChevronDown, Eye, FileText, GripVertical, MessageCircle, Microwave, Pencil, Phone, Refrigerator, Trash2, WashingMachine, Wrench } from "lucide-react";
+import type { Appliance } from "@/lib/types";
 import { buildJobUpdateText, formatDate, waLink } from "@/lib/format";
 import { softSpring } from "@/lib/motion";
 import type { Bill, Job, JobStatus } from "@/lib/types";
@@ -23,13 +24,22 @@ interface Props {
 
 const STATUSES: JobStatus[] = ["pending", "in-progress", "completed"];
 
+const APPLIANCE_ICON: Record<Appliance, typeof Wrench> = {
+  AC: AirVent,
+  "Car A/C": Car,
+  Fridge: Refrigerator,
+  "Washing Machine": WashingMachine,
+  Oven: Microwave,
+  Other: Wrench,
+};
+
 export default function JobCard({ job, bill, draggable = false, onDrag, onDragEnd }: Props) {
   const { settings, setJobStatus, removeJob } = useData();
   const { openBill, openJob, viewInvoice } = useUI();
   const [open, setOpen] = useState(false);
   const dragged = useRef(false);
   const meta = JOB_STATUS[job.status];
-  const Icon = job.appliance === "Fridge" ? Refrigerator : job.appliance === "AC" ? AirVent : Wrench;
+  const Icon = APPLIANCE_ICON[job.appliance] ?? Wrench;
 
   return (
     <motion.div
@@ -50,7 +60,7 @@ export default function JobCard({ job, bill, draggable = false, onDrag, onDragEn
       }}
       transition={softSpring}
       className={`card relative !p-0 transition-colors ${draggable ? "cursor-grab active:cursor-grabbing" : ""} ${
-        open ? `border-white/20 ${meta.glow}` : "hover:border-white/20"
+        open ? `border-line-strong ${meta.glow}` : "hover:border-line-strong"
       }`}
     >
       <button
@@ -65,17 +75,17 @@ export default function JobCard({ job, bill, draggable = false, onDrag, onDragEn
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-2">
             <span className="truncate font-semibold">{job.customer.name}</span>
-            {draggable && <GripVertical size={14} className="shrink-0 text-zinc-600" />}
+            {draggable && <GripVertical size={14} className="shrink-0 text-faint" />}
           </span>
-          <span className="block truncate text-sm text-zinc-300">{job.issue}</span>
-          <span className="mt-0.5 block text-xs text-zinc-500">
+          <span className="block truncate text-sm text-fg2">{job.issue}</span>
+          <span className="mt-0.5 block text-xs text-subtle">
             {job.number} · {job.appliance} · {formatDate(job.createdAt)}
           </span>
           <span className="mt-2 block">
             <JobStatusBadge status={job.status} />
           </span>
         </span>
-        <motion.span animate={{ rotate: open ? 180 : 0 }} transition={softSpring} className="mt-1 shrink-0 text-zinc-500">
+        <motion.span animate={{ rotate: open ? 180 : 0 }} transition={softSpring} className="mt-1 shrink-0 text-subtle">
           <ChevronDown size={16} />
         </motion.span>
       </button>
@@ -89,42 +99,42 @@ export default function JobCard({ job, bill, draggable = false, onDrag, onDragEn
             transition={softSpring}
             className="overflow-hidden"
           >
-            <div className="space-y-3 border-t border-white/10 p-4">
+            <div className="space-y-3 border-t border-line p-4">
               <dl className="grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
                 {job.customer.phone && (
                   <div>
                     <dt className="label !mb-0">Phone</dt>
-                    <dd className="text-zinc-300">{job.customer.phone}</dd>
+                    <dd className="text-fg2">{job.customer.phone}</dd>
                   </div>
                 )}
                 {job.brand && (
                   <div>
                     <dt className="label !mb-0">Brand / Model</dt>
-                    <dd className="text-zinc-300">{job.brand}</dd>
+                    <dd className="text-fg2">{job.brand}</dd>
                   </div>
                 )}
                 {job.technician && (
                   <div>
                     <dt className="label !mb-0">Technician</dt>
-                    <dd className="text-zinc-300">{job.technician}</dd>
+                    <dd className="text-fg2">{job.technician}</dd>
                   </div>
                 )}
                 {job.visitDate && (
                   <div>
                     <dt className="label !mb-0">Visit date</dt>
-                    <dd className="text-zinc-300">{formatDate(job.visitDate)}</dd>
+                    <dd className="text-fg2">{formatDate(job.visitDate)}</dd>
                   </div>
                 )}
                 {job.customer.address && (
                   <div className="col-span-2">
                     <dt className="label !mb-0">Address</dt>
-                    <dd className="whitespace-pre-line text-zinc-300">{job.customer.address}</dd>
+                    <dd className="whitespace-pre-line text-fg2">{job.customer.address}</dd>
                   </div>
                 )}
                 {job.notes && (
                   <div className="col-span-2">
                     <dt className="label !mb-0">Notes</dt>
-                    <dd className="whitespace-pre-line text-zinc-300">{job.notes}</dd>
+                    <dd className="whitespace-pre-line text-fg2">{job.notes}</dd>
                   </div>
                 )}
               </dl>
@@ -135,7 +145,7 @@ export default function JobCard({ job, bill, draggable = false, onDrag, onDragEn
                     key={s}
                     onClick={() => job.status !== s && setJobStatus(job, s)}
                     aria-pressed={job.status === s}
-                    className={`!rounded-lg !px-1 !py-1.5 text-[11px] ${job.status === s ? JOB_STATUS[s].active : "!text-zinc-500"}`}
+                    className={`!rounded-lg !px-1 !py-1.5 text-[11px] ${job.status === s ? JOB_STATUS[s].active : "!text-subtle"}`}
                   >
                     {JOB_STATUS[s].column}
                   </Button>

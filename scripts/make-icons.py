@@ -29,3 +29,11 @@ src.resize((640, 640), Image.LANCZOS).save("public/logo.jpg", quality=90)
 # favicon: PNG-in-ICO
 tile(64, 0.02, True).save("app/favicon.ico", format="ICO", sizes=[(64, 64)])
 print("icons written")
+
+# Watermark silhouette (used as a CSS mask): darkness of the logo becomes alpha.
+from PIL import ImageOps
+
+gray = ImageOps.invert(src.convert("L")).point(lambda v: 0 if v < 24 else min(255, int(v * 1.25)))
+wm = Image.new("RGBA", src.size, (0, 0, 0, 0))
+wm.putalpha(gray)
+wm.resize((800, 800), Image.LANCZOS).save("public/watermark.png", optimize=True)

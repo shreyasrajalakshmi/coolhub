@@ -1,6 +1,7 @@
 export type DiscountType = "amount" | "percent";
 export type BillStatus = "paid" | "pending";
 export type PaperSize = "a4" | "t80" | "t58";
+export type PaymentMethod = "cash" | "upi";
 
 export interface BillItem {
   id: string;
@@ -21,6 +22,9 @@ export interface Bill {
   customerId?: string;
   jobId?: string;
   createdAt: string; // ISO timestamp
+  /** When the bill was settled (revenue is counted on this day). */
+  paidAt?: string;
+  paymentMethod?: PaymentMethod;
   customer: Customer;
   items: BillItem[];
   discountType: DiscountType;
@@ -35,7 +39,8 @@ export interface Bill {
 }
 
 export type JobStatus = "pending" | "in-progress" | "completed";
-export type Appliance = "AC" | "Fridge" | "Other";
+export type Appliance = "AC" | "Car A/C" | "Fridge" | "Washing Machine" | "Oven" | "Other";
+export const APPLIANCES: Appliance[] = ["AC", "Car A/C", "Fridge", "Washing Machine", "Oven", "Other"];
 
 export interface Job {
   id: string;
@@ -62,10 +67,20 @@ export interface Contact extends Customer {
   createdAt: string;
 }
 
+export interface ServicePreset {
+  name: string;
+  /** Optional default unit price – left blank unless the shop sets one. */
+  price?: number;
+}
+
 export interface Settings {
+  /** Bumped when the official shop profile changes, so stored copies get refreshed. */
+  profileVersion: number;
   shopName: string;
   tagline: string;
+  services: string;
   phone: string;
+  email: string;
   address: string;
   technician: string;
   technicianPhone: string;
@@ -79,26 +94,59 @@ export interface Settings {
   jobPrefix: string;
   nextJobNumber: number;
   defaultPaper: PaperSize;
+  servicePresets: ServicePreset[];
 }
 
-export const DEFAULT_SETTINGS: Settings = {
+export const PROFILE_VERSION = 2;
+
+export const OFFICIAL_PROFILE = {
+  profileVersion: PROFILE_VERSION,
   shopName: "Cool Hub",
-  tagline: "AC & Refrigerator Repair & Services",
-  phone: "",
-  address: "",
+  tagline: "If you have doubts about this work, we will never let you down",
+  services: "Car A/C Fitting, Fridge, Washing Machine, Oven Repairing & Service, Secondhand Sale",
+  phone: "9645128949, 8089785214",
+  email: "coolhub4914@gmail.com",
+  address: "KSEB Building, Pattambi Road, Pengattiri",
+  footerNote: "If you have doubts about this work, we will never let you down",
+};
+
+export const DEFAULT_PRESETS: ServicePreset[] = [
+  "AC Gas Filling",
+  "Car A/C Gas Filling",
+  "Car A/C Fitting",
+  "Compressor Replacement",
+  "Fridge Compressor Service",
+  "General Service",
+  "Capacitor Change",
+  "Washing Machine Repair",
+  "Microwave/Oven Service",
+  "AC Installation",
+  "AC Uninstallation",
+  "PCB Repair",
+  "Fan Motor Replacement",
+  "Fridge Gas Filling",
+  "Thermostat Replacement",
+  "Door Gasket Change",
+  "Copper Piping",
+  "Secondhand Sale",
+  "Visiting Charges",
+  "Labour Charges",
+].map((name) => ({ name }));
+
+export const DEFAULT_SETTINGS: Settings = {
+  ...OFFICIAL_PROFILE,
   technician: "",
   technicianPhone: "",
   countryCode: "91",
   invoicePrefix: "CH-",
   nextNumber: 1,
-  footerNote: "Thank you for choosing Cool Hub! 30-day service warranty on repairs.",
-  terms:
-    "1. 30-day service warranty on repair work; parts carry the manufacturer's warranty.\n2. Warranty is void on physical damage, water damage or tampering.\n3. Payment is due on completion of service.",
+  terms: "",
   gstin: "",
   defaultTaxRate: 0,
   jobPrefix: "JOB-",
   nextJobNumber: 1,
   defaultPaper: "a4",
+  servicePresets: DEFAULT_PRESETS,
 };
 
 export const QUICK_ISSUES = [
@@ -111,21 +159,6 @@ export const QUICK_ISSUES = [
   "PCB / Electrical fault",
   "Routine service",
   "Installation",
-];
-
-export const QUICK_SERVICES = [
-  "AC Gas Filling",
-  "Compressor Replacement",
-  "General Service",
-  "Capacitor Change",
-  "AC Installation",
-  "AC Uninstallation",
-  "PCB Repair",
-  "Fan Motor Replacement",
-  "Fridge Gas Filling",
-  "Thermostat Replacement",
-  "Door Gasket Change",
-  "Copper Piping",
-  "Visiting Charges",
-  "Labour Charges",
+  "Drum not spinning / Water not draining",
+  "Not heating",
 ];

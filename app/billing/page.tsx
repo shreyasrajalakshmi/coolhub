@@ -6,7 +6,7 @@ import { useUI } from "@/components/UIProvider";
 
 export default function BillingPage() {
   const { bills, removeBill, setBillStatus } = useData();
-  const { openBill, viewInvoice } = useUI();
+  const { openBill, viewInvoice, markPaid } = useUI();
 
   return (
     <BillHistory
@@ -17,7 +17,7 @@ export default function BillingPage() {
       onDelete={(b) => {
         if (window.confirm(`Delete bill ${b.number} for ${b.customer.name}? This cannot be undone.`)) removeBill(b.id);
       }}
-      onToggleStatus={(b) => setBillStatus(b, b.status === "paid" ? "pending" : "paid")}
+      onToggleStatus={(b) => (b.status === "paid" ? setBillStatus(b, "pending") : markPaid(b))}
     />
   );
 }

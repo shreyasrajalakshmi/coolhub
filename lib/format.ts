@@ -47,8 +47,9 @@ export function normalizePhone(phone: string, countryCode: string): string {
 export function buildWhatsAppText(bill: Bill, settings: Settings): string {
   const lines: string[] = [];
   lines.push(`*${settings.shopName}*`);
-  if (settings.tagline) lines.push(settings.tagline);
+  if (settings.services) lines.push(settings.services);
   if (settings.phone) lines.push(`📞 ${settings.phone}`);
+  if (settings.address) lines.push(`📍 ${settings.address}`);
   lines.push("");
   lines.push(`*Bill No:* ${bill.number}`);
   lines.push(`*Date:* ${formatDate(bill.createdAt)}`);

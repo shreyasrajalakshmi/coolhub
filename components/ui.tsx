@@ -54,31 +54,31 @@ export const JOB_STATUS: Record<
   pending: {
     label: "Pending",
     column: "Pending",
-    text: "text-red-400",
+    text: "text-accent-fg",
     dot: "bg-red-500",
-    badge: "border-red-500/40 bg-red-500/10 text-red-300",
-    active: "border-red-500/60 bg-red-500/15 text-red-300 shadow-[0_0_18px_-4px_rgba(239,68,68,0.8)]",
-    glow: "shadow-[0_0_30px_-8px_rgba(239,68,68,0.7)]",
+    badge: "border-red-500/40 bg-red-500/10 text-accent-fg",
+    active: "border-red-500/60 bg-red-500/15 text-accent-fg",
+    glow: "",
     icon: Clock,
   },
   "in-progress": {
     label: "In Progress",
     column: "In Progress",
-    text: "text-amber-400",
+    text: "text-warn-fg",
     dot: "bg-amber-400",
-    badge: "border-amber-400/40 bg-amber-400/10 text-amber-300",
-    active: "border-amber-400/60 bg-amber-400/15 text-amber-300 shadow-[0_0_18px_-4px_rgba(251,191,36,0.8)]",
-    glow: "shadow-[0_0_30px_-8px_rgba(251,191,36,0.6)]",
+    badge: "border-amber-400/40 bg-amber-400/10 text-warn-fg",
+    active: "border-amber-400/60 bg-amber-400/15 text-warn-fg",
+    glow: "",
     icon: Loader2,
   },
   completed: {
     label: "Completed",
     column: "Ready for Billing",
-    text: "text-emerald-400",
+    text: "text-ok-fg",
     dot: "bg-emerald-400",
-    badge: "border-emerald-400/40 bg-emerald-400/10 text-emerald-300",
-    active: "border-emerald-400/60 bg-emerald-400/15 text-emerald-300 shadow-[0_0_18px_-4px_rgba(52,211,153,0.8)]",
-    glow: "shadow-[0_0_30px_-8px_rgba(52,211,153,0.6)]",
+    badge: "border-emerald-400/40 bg-emerald-400/10 text-ok-fg",
+    active: "border-emerald-400/60 bg-emerald-400/15 text-ok-fg",
+    glow: "",
     icon: CheckCircle2,
   },
 };
@@ -115,11 +115,11 @@ export function JobStatusBadge({ status }: { status: JobStatus }) {
 
 export function BillStatusBadge({ status }: { status: BillStatus }) {
   return status === "paid" ? (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-2.5 py-1 text-xs font-semibold text-emerald-300">
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-2.5 py-1 text-xs font-semibold text-ok-fg">
       <CheckCircle2 size={12} /> Paid
     </span>
   ) : (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-red-500/40 bg-red-500/10 px-2.5 py-1 text-xs font-semibold text-red-300">
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-red-500/40 bg-red-500/10 px-2.5 py-1 text-xs font-semibold text-accent-fg">
       <Clock size={12} /> Pending
     </span>
   );
@@ -137,7 +137,7 @@ export function PageHeader({ title, subtitle, action }: { title: string; subtitl
     >
       <div>
         <h1 className="font-display text-3xl font-bold tracking-tight">{title}</h1>
-        {subtitle && <p className="mt-0.5 text-sm text-zinc-500">{subtitle}</p>}
+        {subtitle && <p className="mt-0.5 text-sm text-subtle">{subtitle}</p>}
       </div>
       {action}
     </motion.div>
@@ -149,7 +149,7 @@ export function EmptyState({ children }: { children: React.ReactNode }) {
     <motion.div
       initial={{ opacity: 0, scale: 0.97 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="card py-12 text-center text-sm text-zinc-500"
+      className="card py-12 text-center text-sm text-subtle"
     >
       {children}
     </motion.div>
@@ -171,20 +171,20 @@ export function Segmented<T extends string>({
   className?: string;
 }) {
   return (
-    <div className={`inline-flex rounded-xl border border-white/10 bg-white/[0.04] p-1 ${className}`} role="tablist">
+    <div className={`inline-flex rounded-xl border border-line bg-fill-faint p-1 ${className}`} role="tablist">
       {options.map((o) => (
         <button
           key={o.value}
           role="tab"
           aria-selected={value === o.value}
           onClick={() => onChange(o.value)}
-          className={`relative rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${value === o.value ? "text-white" : "text-zinc-500 hover:text-zinc-300"}`}
+          className={`relative rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${value === o.value ? "text-fg" : "text-subtle hover:text-fg2"}`}
         >
           {value === o.value && (
             <motion.span
               layoutId={`seg-${id}`}
               transition={spring}
-              className="absolute inset-0 rounded-lg border border-red-500/50 bg-red-500/20 shadow-[0_0_16px_-4px_rgba(239,68,68,0.8)]"
+              className="absolute inset-0 rounded-lg border border-red-500/50 bg-red-500/20"
             />
           )}
           <span className="relative">{o.label}</span>

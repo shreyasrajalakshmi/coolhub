@@ -3,13 +3,16 @@
 import { AnimatePresence } from "framer-motion";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { createContext, Suspense, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import type { Bill, Contact, Job } from "@/lib/types";
+import { Banknote, Smartphone } from "lucide-react";
+import { formatMoney } from "@/lib/format";
+import type { Bill, Contact, Job, PaymentMethod } from "@/lib/types";
 import BillForm from "./BillForm";
 import { useData } from "./DataProvider";
 import Drawer from "./Drawer";
 import InvoiceModal from "./InvoiceModal";
 import JobForm from "./JobForm";
 import QuickWhatsApp from "./QuickWhatsApp";
+import { Button } from "./ui";
 
 interface BillDraft {
   editing?: Bill | null;
@@ -26,6 +29,8 @@ interface UIContextValue {
   openJob: (draft?: JobDraft) => void;
   viewInvoice: (bill: Bill) => void;
   openWhatsApp: (contact?: Contact | null) => void;
+  /** Asks how a pending bill was paid (Cash / UPI), then marks it paid. */
+  markPaid: (bill: Bill) => void;
 }
 
 const UIContext = createContext<UIContextValue | null>(null);
@@ -58,18 +63,26 @@ function DeepLinks({ openBill, openJob }: Pick<UIContextValue, "openBill" | "ope
 }
 
 export default function UIProvider({ children }: { children: React.ReactNode }) {
-  const { settings } = useData();
+  const { settings, setBillStatus } = useData();
   const [billDraft, setBillDraft] = useState<BillDraft | null>(null);
   const [jobDraft, setJobDraft] = useState<JobDraft | null>(null);
   const [invoice, setInvoice] = useState<Bill | null>(null);
   const [whatsapp, setWhatsapp] = useState<{ contact: Contact | null } | null>(null);
+  const [paying, setPaying] = useState<Bill | null>(null);
 
   const openBill = useCallback((d: BillDraft = {}) => setBillDraft(d), []);
   const openJob = useCallback((d: JobDraft = {}) => setJobDraft(d), []);
   const viewInvoice = useCallback((b: Bill) => setInvoice(b), []);
   const openWhatsApp = useCallback((c: Contact | null = null) => setWhatsapp({ contact: c }), []);
 
-  const value = useMemo(() => ({ openBill, openJob, viewInvoice, openWhatsApp }), [openBill, openJob, viewInvoice, openWhatsApp]);
+  const markPaid = useCallback((b: Bill) => setPaying(b), []);
+  const value = useMemo(() => ({ openBill, openJob, viewInvoice, openWhatsApp, markPaid }), [openBill, openJob, viewInvoice, openWhatsApp, markPaid]);
+
+  const pay = async (method: PaymentMethod) => {
+    if (!paying) return;
+    await setBillStatus(paying, "paid", method);
+    setPaying(null);
+  };
   const closeBill = useCallback(() => setBillDraft(null), []);
   const closeJob = useCallback(() => setJobDraft(null), []);
 
@@ -106,6 +119,19 @@ export default function UIProvider({ children }: { children: React.ReactNode }) 
           </Drawer>
         )}
         {whatsapp && <QuickWhatsApp key="wa" initialContact={whatsapp.contact} onClose={() => setWhatsapp(null)} />}
+        {paying && (
+          <Drawer key="pay" title="Mark as paid" subtitle={`${paying.number} · ${paying.customer.name} · ${formatMoney(paying.total)}`} onClose={() => setPaying(null)} variant="dialog">
+            <p className="mb-3 text-sm text-muted">How did the customer pay?</p>
+            <div className="grid grid-cols-2 gap-3">
+              <Button onClick={() => pay("cash")} className="flex-col !gap-2 !py-5">
+                <Banknote size={24} className="text-ok-fg" /> Cash
+              </Button>
+              <Button onClick={() => pay("upi")} className="flex-col !gap-2 !py-5">
+                <Smartphone size={24} className="text-ok-fg" /> UPI / Online
+              </Button>
+            </div>
+          </Drawer>
+        )}
         {invoice && <InvoiceModal key="invoice" bill={invoice} settings={settings} onClose={() => setInvoice(null)} />}
       </AnimatePresence>
     </UIContext.Provider>

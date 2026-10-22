@@ -53,14 +53,14 @@ export default function InvoiceModal({ bill, settings, onClose }: Props) {
 
   return createPortal(
     <motion.div
-      className="print-modal fixed inset-0 z-[60] overflow-y-auto bg-black/85 backdrop-blur-md"
+      className="print-modal fixed inset-0 z-[60] overflow-y-auto bg-ink/95 backdrop-blur-md"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
       <style>{pageCss(paper, heightMm)}</style>
 
-      <div className="no-print safe-top sticky top-0 z-10 border-b border-white/10 bg-black/70 backdrop-blur-xl">
+      <div className="no-print safe-top sticky top-0 z-10 border-b border-line bg-chrome-solid backdrop-blur-xl">
         <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-2 px-3 py-2.5">
           <Button onClick={onClose} className="!px-3" aria-label="Close">
             <X size={18} />
@@ -85,7 +85,7 @@ export default function InvoiceModal({ bill, settings, onClose }: Props) {
         className="px-2 py-5 safe-bottom sm:py-8"
       >
         <InvoiceView bill={bill} settings={settings} paper={paper} />
-        <p className="no-print mx-auto mt-4 max-w-md text-center text-xs text-zinc-500">
+        <p className="no-print mx-auto mt-4 max-w-md text-center text-xs text-subtle">
           Tip: choose “Save as PDF” in the print dialog to get a PDF copy.
         </p>
       </motion.div>

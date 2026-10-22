@@ -7,7 +7,7 @@ export default function Logo({ size = 44, className = "" }: { size?: number; cla
       alt="Cool Hub"
       width={size}
       height={size}
-      className={`shrink-0 rounded-xl bg-white object-cover shadow-[0_0_24px_-6px_rgba(239,68,68,0.8)] ${className}`}
+      className={`shrink-0 rounded-xl bg-white object-cover ${className}`}
       style={{ width: size, height: size }}
     />
   );

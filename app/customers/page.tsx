@@ -94,7 +94,7 @@ export default function CustomersPage() {
       />
 
       <div className="relative">
-        <Search size={18} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+        <Search size={18} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-subtle" />
         <input className="field !pl-10" type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search by name, phone or address" aria-label="Search customers" />
       </div>
 
@@ -107,19 +107,19 @@ export default function CustomersPage() {
             return (
               <motion.li key={c.id} variants={rise} whileHover={{ y: -3 }}>
                 <button onClick={() => setDetailId(c.id)} className="card flex w-full items-center gap-3 text-left transition-colors hover:border-red-500/40">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-red-500/40 bg-red-500/10 text-red-400 shadow-[0_0_16px_-4px_rgba(239,68,68,0.8)]">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-red-500/40 bg-red-500/10 text-accent-fg">
                     <UserRound size={20} />
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-semibold">{c.name}</span>
-                    <span className="block truncate text-xs text-zinc-500">{c.phone || "No phone"}{c.address && ` · ${c.address}`}</span>
-                    <span className="mt-1 block text-xs text-zinc-600">{st.jobs} job{st.jobs === 1 ? "" : "s"} · {st.bills} bill{st.bills === 1 ? "" : "s"}</span>
+                    <span className="block truncate text-xs text-subtle">{c.phone || "No phone"}{c.address && ` · ${c.address}`}</span>
+                    <span className="mt-1 block text-xs text-faint">{st.jobs} job{st.jobs === 1 ? "" : "s"} · {st.bills} bill{st.bills === 1 ? "" : "s"}</span>
                   </span>
                   <span className="shrink-0 text-right">
-                    <span className="block text-[10px] font-semibold uppercase tracking-wider text-zinc-600">Billed</span>
+                    <span className="block text-[10px] font-semibold uppercase tracking-wider text-faint">Billed</span>
                     <span className="block font-display font-bold">{formatMoney(st.billed)}</span>
                   </span>
-                  <ChevronRight size={18} className="shrink-0 text-zinc-600" />
+                  <ChevronRight size={18} className="shrink-0 text-faint" />
                 </button>
               </motion.li>
             );
@@ -131,21 +131,21 @@ export default function CustomersPage() {
         {detail && !form && (
           <Drawer key="detail" title={detail.name} subtitle="Customer profile" onClose={() => setDetailId(null)}>
             <div className="space-y-5">
-              <div className="text-sm text-zinc-400">
+              <div className="text-sm text-muted">
                 {detail.phone && <p>📞 {detail.phone}</p>}
                 {detail.address && <p className="whitespace-pre-line">📍 {detail.address}</p>}
-                {detail.notes && <p className="mt-1 whitespace-pre-line text-zinc-500">{detail.notes}</p>}
+                {detail.notes && <p className="mt-1 whitespace-pre-line text-subtle">{detail.notes}</p>}
               </div>
 
               <div className="grid grid-cols-3 gap-2 text-center">
                 {[
-                  { label: "Total billed", value: s.billed, tone: "border-red-500/30 bg-red-500/10 text-red-300" },
-                  { label: "Paid", value: s.paid, tone: "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" },
-                  { label: "Pending", value: s.billed - s.paid, tone: "border-amber-400/30 bg-amber-400/10 text-amber-300" },
+                  { label: "Total billed", value: s.billed, tone: "border-red-500/30 bg-red-500/10 text-accent-fg" },
+                  { label: "Paid", value: s.paid, tone: "border-emerald-400/30 bg-emerald-400/10 text-ok-fg" },
+                  { label: "Pending", value: s.billed - s.paid, tone: "border-amber-400/30 bg-amber-400/10 text-warn-fg" },
                 ].map((t) => (
                   <div key={t.label} className={`rounded-xl border p-2 ${t.tone}`}>
                     <p className="text-[10px] font-semibold uppercase tracking-wider opacity-80">{t.label}</p>
-                    <p className="font-display font-bold text-white"><AnimatedNumber value={t.value} format={formatMoney} duration={0.7} /></p>
+                    <p className="font-display font-bold text-fg"><AnimatedNumber value={t.value} format={formatMoney} duration={0.7} /></p>
                   </div>
                 ))}
               </div>
@@ -162,18 +162,18 @@ export default function CustomersPage() {
               </div>
 
               <div>
-                <h3 className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">Repair history</h3>
+                <h3 className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-subtle">Repair history</h3>
                 {history.length === 0 ? (
-                  <p className="rounded-xl border border-white/10 p-4 text-center text-sm text-zinc-500">No jobs or bills yet.</p>
+                  <p className="rounded-xl border border-line p-4 text-center text-sm text-subtle">No jobs or bills yet.</p>
                 ) : (
-                  <ul className="divide-y divide-white/5 overflow-hidden rounded-xl border border-white/10">
+                  <ul className="divide-y divide-line-faint overflow-hidden rounded-xl border border-line">
                     {history.map((h) =>
                       "bill" in h ? (
                         <li key={h.key}>
-                          <button onClick={() => viewInvoice(h.bill)} className="flex w-full items-center gap-3 px-3 py-2.5 text-left hover:bg-white/5">
+                          <button onClick={() => viewInvoice(h.bill)} className="flex w-full items-center gap-3 px-3 py-2.5 text-left hover:bg-fill">
                             <span className="min-w-0 flex-1">
                               <span className="block text-sm font-semibold">Invoice {h.bill.number}</span>
-                              <span className="block truncate text-xs text-zinc-500">{formatDate(h.date)} · {h.bill.items.map((i) => i.description).join(", ")}</span>
+                              <span className="block truncate text-xs text-subtle">{formatDate(h.date)} · {h.bill.items.map((i) => i.description).join(", ")}</span>
                             </span>
                             <span className="flex flex-col items-end gap-1">
                               <span className="font-display text-sm font-bold">{formatMoney(h.bill.total)}</span>
@@ -185,7 +185,7 @@ export default function CustomersPage() {
                         <li key={h.key} className="flex items-center gap-3 px-3 py-2.5">
                           <span className="min-w-0 flex-1">
                             <span className="block text-sm font-semibold">{h.job.appliance} – {h.job.issue}</span>
-                            <span className="block text-xs text-zinc-500">{h.job.number} · {formatDate(h.date)}</span>
+                            <span className="block text-xs text-subtle">{h.job.number} · {formatDate(h.date)}</span>
                           </span>
                           <JobStatusBadge status={h.job.status} />
                         </li>
@@ -195,7 +195,7 @@ export default function CustomersPage() {
                 )}
               </div>
 
-              <div className="flex gap-2 border-t border-white/10 pt-4">
+              <div className="flex gap-2 border-t border-line pt-4">
                 <Button className="flex-1" onClick={() => setForm({ id: detail.id, createdAt: detail.createdAt, data: { name: detail.name, phone: detail.phone, address: detail.address, notes: detail.notes } })}>
                   <Pencil size={16} /> Edit
                 </Button>
@@ -244,7 +244,7 @@ export default function CustomersPage() {
                 <label className="label" htmlFor="c-notes">Notes</label>
                 <textarea id="c-notes" className="field" rows={2} value={form.data.notes} onChange={(e) => setForm({ ...form, data: { ...form.data, notes: e.target.value } })} placeholder="Appliance details, gate code…" />
               </div>
-              {formError && <p role="alert" className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm font-medium text-red-300">{formError}</p>}
+              {formError && <p role="alert" className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm font-medium text-accent-fg">{formError}</p>}
               <div className="flex gap-2">
                 <Button type="button" onClick={() => setForm(null)}>Cancel</Button>
                 <Button type="submit" variant="primary" className="flex-1">Save Customer</Button>

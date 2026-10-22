@@ -1,8 +1,8 @@
 import type { Bill, Contact, Job, Settings } from "./types";
-import { DEFAULT_SETTINGS } from "./types";
+import { DEFAULT_SETTINGS, OFFICIAL_PROFILE, PROFILE_VERSION } from "./types";
 
 const DB_NAME = "coolhub-billbook";
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const SETTINGS_KEY = "coolhub-settings";
 
 type StoreName = "bills" | "jobs" | "contacts";
@@ -69,10 +69,24 @@ export const putContact = (c: Contact) => put("contacts", c);
 export const putContacts = (c: Contact[]) => putMany("contacts", c);
 export const deleteContact = (id: string) => remove("contacts", id);
 
+const OLD_DEFAULT_TERMS =
+  "1. 30-day service warranty on repair work; parts carry the manufacturer's warranty.\n2. Warranty is void on physical damage, water damage or tampering.\n3. Payment is due on completion of service.";
+
 export function loadSettings(): Settings {
   try {
     const raw = localStorage.getItem(SETTINGS_KEY);
-    if (raw) return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
+    if (raw) {
+      const stored = JSON.parse(raw) as Partial<Settings>;
+      let settings: Settings = { ...DEFAULT_SETTINGS, ...stored };
+      if ((stored.profileVersion ?? 0) < PROFILE_VERSION) {
+        // The official shop profile changed: refresh the profile fields, keep counters and preferences.
+        settings = { ...settings, ...OFFICIAL_PROFILE };
+        if (stored.terms === OLD_DEFAULT_TERMS) settings.terms = "";
+        saveSettings(settings);
+      }
+      if (!Array.isArray(settings.servicePresets) || settings.servicePresets.length === 0) settings.servicePresets = DEFAULT_SETTINGS.servicePresets;
+      return settings;
+    }
   } catch {
     /* storage unavailable or corrupt – fall back to defaults */
   }
