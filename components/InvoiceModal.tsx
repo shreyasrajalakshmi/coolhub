@@ -5,7 +5,8 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Download, Loader2, Printer, Share2, X } from "lucide-react";
 import { buildInvoicePdf } from "@/lib/invoicePdf";
-import { canShareFile, downloadFile, shareInvoicePdf } from "@/lib/shareInvoice";
+import { exportFile } from "@/lib/native";
+import { canShareFile, shareInvoicePdf } from "@/lib/shareInvoice";
 import { whatsappUrl } from "@/lib/format";
 import { softSpring } from "@/lib/motion";
 import type { Bill, PaperSize, Settings } from "@/lib/types";
@@ -87,7 +88,7 @@ export default function InvoiceModal({ bill, settings, onClose }: Props) {
   const onDownload = async () => {
     setBusy(true);
     try {
-      downloadFile(await getFile());
+      await exportFile(await getFile(), "Save invoice");
     } catch {
       setNote("Couldn't create the PDF. Use Print → Save as PDF instead.");
     } finally {

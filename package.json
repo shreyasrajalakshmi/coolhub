@@ -2,15 +2,21 @@
   "name": "cool-hub-billbook",
   "version": "1.0.0",
   "private": true,
-  "description": "Offline-first PWA bill book for Cool Hub – AC & Refrigerator Repair & Services",
+  "description": "Offline-first PWA bill book for Cool Hub \u2013 AC & Refrigerator Repair & Services",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "icons": "node scripts/generate-icons.mjs",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build:android": "NEXT_OUTPUT=export next build && cap sync android",
+    "android:open": "cap open android",
+    "android:run": "npm run build:android && cap run android"
   },
   "dependencies": {
+    "@capacitor/core": "^8.5.3",
+    "@capacitor/filesystem": "^8.1.5",
+    "@capacitor/share": "^8.0.3",
     "framer-motion": "^14.5.0",
     "html2canvas-pro": "^2.5.2",
     "jspdf": "^4.2.1",
@@ -20,6 +26,8 @@
     "react-dom": "^19.3.1"
   },
   "devDependencies": {
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/cli": "^8.5.3",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^26.6.5",
     "@types/react": "^19.3.0",

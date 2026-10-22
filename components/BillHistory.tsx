@@ -2,10 +2,10 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { useMemo, useState } from "react";
-import { Eye, IndianRupee, Pencil, Plus, Search } from "lucide-react";
+import { Eye, IndianRupee, Loader2, Pencil, Plus, Search, Share2 } from "lucide-react";
 import { formatDate, formatMoney, localDate } from "@/lib/format";
 import { rise, stagger } from "@/lib/motion";
-import type { Bill } from "@/lib/types";
+import { APPLIANCES, type Appliance, type Bill } from "@/lib/types";
 import AnimatedNumber from "./AnimatedNumber";
 import { BillStatusBadge, Button, DeleteButton, EmptyState, PageHeader } from "./ui";
 
@@ -16,6 +16,9 @@ interface Props {
   onEdit: (bill: Bill) => void;
   onDelete: (bill: Bill) => void;
   onToggleStatus: (bill: Bill) => void;
+  onShare: (bill: Bill) => void;
+  onLedger: (bill: Bill) => void;
+  sharingId: string | null;
 }
 
 type Quick = "all" | "paid" | "pending" | "today" | "week" | "month" | "custom";
@@ -46,9 +49,10 @@ function dateBounds(chips: Set<Quick>, from: string, to: string): [string, strin
 
 const DATE_CHIPS: Quick[] = ["today", "week", "month", "custom"];
 
-export default function BillHistory({ bills, onNew, onView, onEdit, onDelete, onToggleStatus }: Props) {
+export default function BillHistory({ bills, onNew, onView, onEdit, onDelete, onToggleStatus, onShare, onLedger, sharingId }: Props) {
   const [query, setQuery] = useState("");
   const [chips, setChips] = useState<Set<Quick>>(new Set());
+  const [appliance, setAppliance] = useState<Appliance | "all" | "none">("all");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
 
@@ -71,6 +75,7 @@ export default function BillHistory({ bills, onNew, onView, onEdit, onDelete, on
     return bills.filter((b) => {
       if (chips.has("paid") && b.status !== "paid") return false;
       if (chips.has("pending") && b.status !== "pending") return false;
+      if (appliance === "none" ? !!b.appliance : appliance !== "all" && b.appliance !== appliance) return false;
       const day = localDate(b.createdAt);
       if (lo && day < lo) return false;
       if (hi && day > hi) return false;
@@ -81,12 +86,12 @@ export default function BillHistory({ bills, onNew, onView, onEdit, onDelete, on
         (qDigits.length > 0 && b.customer.phone.replace(/\D/g, "").includes(qDigits))
       );
     });
-  }, [bills, query, chips, from, to]);
+  }, [bills, query, chips, from, to, appliance]);
 
   const sum = (list: Bill[]) => list.reduce((s, b) => s + b.total, 0);
   const collected = sum(filtered.filter((b) => b.status === "paid"));
   const pending = sum(filtered.filter((b) => b.status === "pending"));
-  const isFiltered = query.trim() !== "" || chips.size > 0;
+  const isFiltered = query.trim() !== "" || chips.size > 0 || appliance !== "all";
 
   return (
     <div className="space-y-4">
@@ -151,6 +156,16 @@ export default function BillHistory({ bills, onNew, onView, onEdit, onDelete, on
             );
           })}
         </div>
+        <div className="max-w-xs">
+          <label className="label" htmlFor="f-appliance">Appliance</label>
+          <select id="f-appliance" className="field" value={appliance} onChange={(e) => setAppliance(e.target.value as Appliance | "all" | "none")}>
+            <option value="all">All appliances</option>
+            {APPLIANCES.map((a) => (
+              <option key={a} value={a}>{a}</option>
+            ))}
+            <option value="none">Not specified</option>
+          </select>
+        </div>
         <AnimatePresence initial={false}>
           {chips.has("custom") && (
             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
@@ -186,12 +201,18 @@ export default function BillHistory({ bills, onNew, onView, onEdit, onDelete, on
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="truncate text-base font-semibold">{b.customer.name}</p>
+                    {b.customerId ? (
+                      <button onClick={() => onLedger(b)} className="max-w-full cursor-pointer truncate text-left text-base font-semibold underline-offset-4 hover:text-accent-fg hover:underline" title="Open customer history">
+                        {b.customer.name}
+                      </button>
+                    ) : (
+                      <p className="truncate text-base font-semibold">{b.customer.name}</p>
+                    )}
                     <p className="text-xs text-subtle">
                       {b.number} · {formatDate(b.createdAt)}
                       {b.customer.phone && ` · ${b.customer.phone}`}
                     </p>
-                    <p className="mt-1 truncate text-xs text-faint">{b.items.map((it) => it.description).join(", ")}</p>
+                    <p className="mt-1 truncate text-xs text-faint">{b.appliance ? `${b.appliance} · ` : ""}{b.items.map((it) => it.description).join(", ")}</p>
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-1.5">
                     <p className="font-display text-lg font-bold">{formatMoney(b.total)}</p>
@@ -201,7 +222,10 @@ export default function BillHistory({ bills, onNew, onView, onEdit, onDelete, on
                   </div>
                 </div>
                 <div className="mt-3 flex gap-2 border-t border-line pt-3">
-                  <Button onClick={() => onView(b)} className="flex-1 !py-2"><Eye size={16} /> View</Button>
+                  <Button onClick={() => onView(b)} className="flex-1 !py-2" title="View, print or save as PDF"><Eye size={16} /> View</Button>
+                  <Button variant="whatsapp" onClick={() => onShare(b)} disabled={sharingId === b.id} className="flex-1 !py-2" title="Share the PDF on WhatsApp">
+                    {sharingId === b.id ? <Loader2 size={16} className="animate-spin" /> : <Share2 size={16} />} Share
+                  </Button>
                   <Button onClick={() => onEdit(b)} className="flex-1 !py-2"><Pencil size={16} /> Edit</Button>
                   <DeleteButton label={`Delete invoice ${b.number}`} onClick={() => onDelete(b)} className="!h-10 !w-10" />
                 </div>

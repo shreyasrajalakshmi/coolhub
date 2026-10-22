@@ -24,6 +24,8 @@ export interface Bill {
   /** When the bill was marked paid; printed on the PAID seal. */
   paidAt?: string;
   customer: Customer;
+  /** What was serviced; used for filtering and the customer ledger. */
+  appliance?: Appliance;
   items: BillItem[];
   discountType: DiscountType;
   discountValue: number;

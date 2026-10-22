@@ -5,6 +5,7 @@ import AmbientBackground from "./AmbientBackground";
 import AppShell from "./AppShell";
 import DataProvider from "./DataProvider";
 import InstallProvider from "./InstallProvider";
+import LockProvider from "./LockProvider";
 import ThemeProvider from "./ThemeProvider";
 import UIProvider from "./UIProvider";
 
@@ -14,11 +15,13 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       <ThemeProvider>
         <AmbientBackground />
         <InstallProvider>
-          <DataProvider>
-            <UIProvider>
-              <AppShell>{children}</AppShell>
-            </UIProvider>
-          </DataProvider>
+          <LockProvider>
+            <DataProvider>
+              <UIProvider>
+                <AppShell>{children}</AppShell>
+              </UIProvider>
+            </DataProvider>
+          </LockProvider>
         </InstallProvider>
       </ThemeProvider>
     </MotionConfig>

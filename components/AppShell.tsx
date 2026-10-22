@@ -4,9 +4,10 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { LayoutDashboard, Receipt, Settings as SettingsIcon, WifiOff, Wrench } from "lucide-react";
+import { BarChart3, LayoutDashboard, Lock, Receipt, Settings as SettingsIcon, Users, WifiOff, Wrench } from "lucide-react";
 import { spring } from "@/lib/motion";
 import { useData } from "./DataProvider";
+import { useLock } from "./LockProvider";
 import Footer from "./Footer";
 import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
@@ -15,6 +16,8 @@ const NAV = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/billing", label: "Billing", icon: Receipt },
   { href: "/jobs", label: "Jobs", icon: Wrench },
+  { href: "/customers", label: "Customers", icon: Users },
+  { href: "/reports", label: "Reports", icon: BarChart3 },
   { href: "/settings", label: "Settings", icon: SettingsIcon },
 ];
 
@@ -23,6 +26,7 @@ const isActive = (pathname: string, href: string) => (href === "/" ? pathname ==
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { settings, storageError } = useData();
+  const { enabled: lockOn, lock } = useLock();
   const [online, setOnline] = useState(true);
 
   useEffect(() => {
@@ -91,6 +95,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <span className="text-xs font-medium text-muted">Appearance</span>
             <ThemeToggle />
           </div>
+          {lockOn && (
+            <button type="button" onClick={lock} title="Lock the app now" className="flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-line bg-surface-2 text-xs font-semibold text-muted transition-colors hover:border-red-500/40 hover:text-accent-fg">
+              <Lock size={15} /> Lock now
+            </button>
+          )}
         </div>
       </motion.aside>
 
@@ -104,6 +113,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             </p>
             {!online && <WifiOff size={18} className="text-accent-fg" aria-label="Offline" />}
             <ThemeToggle />
+            {lockOn && (
+              <button type="button" onClick={lock} aria-label="Lock now" title="Lock now" className="grid h-9 w-9 shrink-0 cursor-pointer place-items-center rounded-xl border border-line bg-surface-2 text-muted transition-colors hover:text-accent-fg">
+                <Lock size={16} />
+              </button>
+            )}
           </div>
         </header>
 
@@ -127,7 +141,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           style={{ bottom: "calc(env(safe-area-inset-bottom) + 12px)" }}
           aria-label="Main"
         >
-          <div className="grid grid-cols-4">
+          <div className="grid grid-cols-6">
             {NAV.map(({ href, label, icon: Icon }) => {
               const active = isActive(pathname, href);
               return (
@@ -135,7 +149,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   key={href}
                   href={href}
                   aria-current={active ? "page" : undefined}
-                  className={`relative flex flex-col items-center gap-0.5 rounded-xl py-2 text-[10px] font-semibold transition-colors ${active ? "text-fg" : "text-subtle"}`}
+                  className={`relative flex flex-col items-center gap-0.5 rounded-xl py-2 text-[9.5px] font-semibold transition-colors ${active ? "text-fg" : "text-subtle"}`}
                 >
                   {active && (
                     <motion.span

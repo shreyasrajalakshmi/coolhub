@@ -3,9 +3,11 @@
 import { motion } from "framer-motion";
 import { useRef, useState } from "react";
 import { Download, Plus, RotateCcw, Trash2, Upload } from "lucide-react";
+import { exportFile } from "@/lib/native";
 import { DEFAULT_PRESETS, type Bill, type Contact, type Job, type PaperSize, type Settings } from "@/lib/types";
 import { useData } from "./DataProvider";
 import InstallButton from "./InstallButton";
+import SecuritySettings from "./SecuritySettings";
 import { useInstall } from "./InstallProvider";
 import { Button, PageHeader } from "./ui";
 import { rise, stagger } from "@/lib/motion";
@@ -16,15 +18,10 @@ export default function SettingsPanel() {
   const [message, setMessage] = useState("");
   const { available: canInstall } = useInstall();
 
-  const exportBackup = () => {
-    const blob = new Blob([JSON.stringify({ app: "coolhub", version: 5, settings, bills, jobs, contacts }, null, 2)], {
-      type: "application/json",
-    });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `coolhub-backup-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(a.href);
+  const exportBackup = async () => {
+    const file = new File([JSON.stringify({ app: "coolhub", version: 5, settings, bills, jobs, contacts }, null, 2)], `coolhub-backup-${new Date().toISOString().slice(0, 10)}.json`, { type: "application/json" });
+    await exportFile(file, "Save backup");
+    setMessage(`Backup ready: ${bills.length} bills, ${jobs.length} jobs, ${contacts.length} customers.`);
   };
 
   const importBackup = async (file: File) => {
@@ -151,6 +148,8 @@ export default function SettingsPanel() {
           <Plus size={16} /> Add preset
         </Button>
       </motion.section>
+
+      <SecuritySettings />
 
       <motion.section variants={rise} className="card space-y-3">
         <h3 className="text-xs font-bold uppercase tracking-[0.18em] text-accent-fg">Install & Backup</h3>

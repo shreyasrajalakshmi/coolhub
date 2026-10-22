@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Cool Hub</string>
+    <string name="title_activity_main">Cool Hub</string>
+    <string name="package_name">com.coolhub.billbook</string>
+    <string name="custom_url_scheme">com.coolhub.billbook</string>
+</resources>

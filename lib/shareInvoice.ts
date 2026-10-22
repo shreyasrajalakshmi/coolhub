@@ -1,4 +1,5 @@
 import { whatsappUrl } from "./format";
+import { exportFile, isNative } from "./native";
 import type { Bill, Settings } from "./types";
 
 export type ShareOutcome = "shared" | "cancelled" | "downloaded";
@@ -12,17 +13,6 @@ export function canShareFile(file: File): boolean {
   }
 }
 
-export function downloadFile(file: File): void {
-  const url = URL.createObjectURL(file);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = file.name;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 10_000);
-}
-
 /**
  * Share the invoice PDF.
  * 1. Native share sheet with the real file attached (WhatsApp is one tap away), when supported.
@@ -32,6 +22,7 @@ export function downloadFile(file: File): void {
  * reject `navigator.share` once the tap's user-activation has gone stale.
  */
 export async function shareInvoicePdf(file: File, bill: Bill, settings: Settings): Promise<ShareOutcome> {
+  if (isNative()) return (await exportFile(file, "Share invoice")) ? "shared" : "cancelled"; // Android app: system share sheet
   if (canShareFile(file)) {
     try {
       await navigator.share({
@@ -45,7 +36,7 @@ export async function shareInvoicePdf(file: File, bill: Bill, settings: Settings
       // any other failure (e.g. NotAllowedError) falls through to the download + chat route
     }
   }
-  downloadFile(file);
+  await exportFile(file);
   window.open(whatsappUrl(bill, settings), "_blank", "noopener");
   return "downloaded";
 }

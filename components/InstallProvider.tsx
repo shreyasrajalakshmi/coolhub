@@ -2,6 +2,7 @@
 
 import { AnimatePresence } from "framer-motion";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { isNative } from "@/lib/native";
 import IosInstallHelp from "./IosInstallHelp";
 
 interface BeforeInstallPromptEvent extends Event {
@@ -37,7 +38,7 @@ export default function InstallProvider({ children }: { children: React.ReactNod
   const [help, setHelp] = useState(false);
 
   useEffect(() => {
-    setInstalled(isStandalone());
+    setInstalled(isStandalone() || isNative());
     setIos(isIos());
 
     const onPrompt = (e: Event) => {

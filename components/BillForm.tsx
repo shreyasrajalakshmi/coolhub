@@ -6,7 +6,7 @@ import { Plus, Save, Trash2, Zap } from "lucide-react";
 import { computeTotals, lineTotal } from "@/lib/calc";
 import { formatMoney, newId } from "@/lib/format";
 import { softSpring } from "@/lib/motion";
-import { type Bill, type BillStatus, type Contact, type DiscountType, type Job, type ServicePreset } from "@/lib/types";
+import { APPLIANCES, type Appliance, type Bill, type BillStatus, type Contact, type DiscountType, type Job, type ServicePreset } from "@/lib/types";
 import AnimatedNumber from "./AnimatedNumber";
 import CustomerFields from "./CustomerFields";
 import { useData } from "./DataProvider";
@@ -43,6 +43,7 @@ export default function BillForm({ editing = null, job = null, contact = null, o
         ? [blankItem(`${job.appliance === "Other" ? "Appliance" : job.appliance} – ${job.issue}`)]
         : [blankItem()],
   );
+  const [appliance, setAppliance] = useState<Appliance | "">(editing?.appliance ?? job?.appliance ?? "");
   const [taxRate, setTaxRate] = useState(String(editing ? (editing.taxRate ?? 0) : settings.defaultTaxRate));
   const [discountType, setDiscountType] = useState<DiscountType>(editing?.discountType ?? "amount");
   const [discountValue, setDiscountValue] = useState(editing && editing.discountValue ? String(editing.discountValue) : "");
@@ -87,6 +88,7 @@ export default function BillForm({ editing = null, job = null, contact = null, o
       jobId: editing?.jobId ?? job?.id,
       createdAt: editing?.createdAt ?? new Date().toISOString(),
       customer: { name: customer.name.trim(), phone: customer.phone.trim(), address: customer.address.trim() },
+      appliance: appliance || undefined,
       items: cleaned,
       discountType,
       discountValue: num(discountValue),
@@ -119,6 +121,15 @@ export default function BillForm({ editing = null, job = null, contact = null, o
 
       <div className="space-y-3">
         <h3 className="text-xs font-bold uppercase tracking-[0.18em] text-subtle">Services &amp; Parts</h3>
+        <div>
+          <label className="label" htmlFor="bill-appliance">Appliance serviced (optional)</label>
+          <select id="bill-appliance" className="field" value={appliance} onChange={(e) => setAppliance(e.target.value as Appliance | "")}>
+            <option value="">Not specified</option>
+            {APPLIANCES.map((a) => (
+              <option key={a} value={a}>{a}</option>
+            ))}
+          </select>
+        </div>
         <div>
           <p className="label flex items-center gap-1"><Zap size={11} className="text-accent-fg" /> Quick add</p>
           <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">

@@ -10,6 +10,7 @@ import { useData } from "./DataProvider";
 import Drawer from "./Drawer";
 import InvoiceModal from "./InvoiceModal";
 import JobForm from "./JobForm";
+import CustomerLedger from "./CustomerLedger";
 import QuickWhatsApp from "./QuickWhatsApp";
 import { Button } from "./ui";
 
@@ -28,6 +29,8 @@ interface UIContextValue {
   openJob: (draft?: JobDraft) => void;
   viewInvoice: (bill: Bill) => void;
   openWhatsApp: (contact?: Contact | null) => void;
+  /** Opens a customer's history: every bill, appliance serviced, total spent and pending dues. */
+  openLedger: (contactId: string) => void;
   /** Styled yes/no prompt; resolves true only if the user confirms. */
   confirm: (opts: ConfirmOptions) => Promise<boolean>;
 }
@@ -72,6 +75,7 @@ export default function UIProvider({ children }: { children: React.ReactNode }) 
   const [billDraft, setBillDraft] = useState<BillDraft | null>(null);
   const [jobDraft, setJobDraft] = useState<JobDraft | null>(null);
   const [invoice, setInvoice] = useState<Bill | null>(null);
+  const [ledgerId, setLedgerId] = useState<string | null>(null);
   const [whatsapp, setWhatsapp] = useState<{ contact: Contact | null } | null>(null);
   const [asking, setAsking] = useState<{ opts: ConfirmOptions; resolve: (ok: boolean) => void } | null>(null);
 
@@ -80,14 +84,15 @@ export default function UIProvider({ children }: { children: React.ReactNode }) 
   const viewInvoice = useCallback((b: Bill) => setInvoice(b), []);
   const openWhatsApp = useCallback((c: Contact | null = null) => setWhatsapp({ contact: c }), []);
 
+  const openLedger = useCallback((id: string) => setLedgerId(id), []);
   const confirm = useCallback((opts: ConfirmOptions) => new Promise<boolean>((resolve) => setAsking({ opts, resolve })), []);
   const answer = (ok: boolean) => {
     asking?.resolve(ok);
     setAsking(null);
   };
   const value = useMemo(
-    () => ({ openBill, openJob, viewInvoice, openWhatsApp, confirm }),
-    [openBill, openJob, viewInvoice, openWhatsApp, confirm],
+    () => ({ openBill, openJob, viewInvoice, openWhatsApp, openLedger, confirm }),
+    [openBill, openJob, viewInvoice, openWhatsApp, openLedger, confirm],
   );
 
   const closeBill = useCallback(() => setBillDraft(null), []);
@@ -126,6 +131,7 @@ export default function UIProvider({ children }: { children: React.ReactNode }) 
           </Drawer>
         )}
         {whatsapp && <QuickWhatsApp key="wa" initialContact={whatsapp.contact} onClose={() => setWhatsapp(null)} />}
+        {ledgerId && <CustomerLedger key="ledger" contactId={ledgerId} onClose={() => setLedgerId(null)} />}
         {asking && (
           <Drawer key="confirm" title={asking.opts.title} onClose={() => answer(false)} variant="dialog">
             <div className="flex gap-3">
